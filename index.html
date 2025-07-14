@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Rocuronium pharmacokinetic and pharmacodynamic simulator for education and research">
+    <meta name="keywords" content="rocuronium, pharmacokinetics, pharmacodynamics, anesthesia, simulation, neuromuscular blocking agent">
+    <meta name="author" content="YASUYUKI SUZUKI">
+    <title>Rocuronium PK/PD Simulator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0d6efd">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Disclaimer Modal -->
+    <div id="disclaimerModal" class="modal active">
+        <div class="modal-content">
+            <div class="disclaimer-header">
+                <div class="warning-icon">⚠️</div>
+                <h2>Disclaimer</h2>
+            </div>
+            <div class="disclaimer-text">
+                <p>This application is an educational and research tool that provides simulation results based on pharmacokinetic models.</p>
+                <p>The displayed results are theoretical values and do not guarantee actual clinical patient responses.</p>
+                <p>Do not use this application as the basis for actual clinical decisions.</p>
+                <p>All clinical decisions should be made by qualified medical professionals at their own responsibility.</p>
+            </div>
+            <button id="acceptDisclaimer" class="accept-btn">Accept and Start</button>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="mainApp" class="main-app hidden">
+        <!-- Navigation Tabs -->
+        <nav class="tab-nav">
+            <button class="tab-btn active" data-tab="patient">
+                <span class="tab-icon">👤</span>
+                <span class="tab-text">Patient</span>
+            </button>
+            <button class="tab-btn" data-tab="dose">
+                <span class="tab-icon">💊</span>
+                <span class="tab-text">Dosing</span>
+            </button>
+            <button class="tab-btn" data-tab="results">
+                <span class="tab-icon">📊</span>
+                <span class="tab-text">Results</span>
+            </button>
+            <button class="tab-btn" data-tab="info">
+                <span class="tab-icon">ℹ️</span>
+                <span class="tab-text">Info</span>
+            </button>
+        </nav>
+
+        <!-- Tab Panels -->
+        <main class="tab-content">
+            <!-- Patient Information Tab -->
+            <section id="patientTab" class="tab-panel active">
+                <div class="header">
+                    <h1>Patient Information</h1>
+                    <p class="subtitle">Rocuronium PK/PD Simulator</p>
+                </div>
+
+                <div class="card patient-info-card">
+                    <div class="card-header">
+                        <h3>Patient Details</h3>
+                        <button id="editPatientBtn" class="edit-btn">Edit</button>
+                    </div>
+                    <div class="patient-grid">
+                        <div class="info-item">
+                            <label>Patient ID</label>
+                            <span id="patientId">Patient-2025-07-13</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Age</label>
+                            <span id="patientAge">50 years</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Weight</label>
+                            <span id="patientWeight">70.0 kg</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Height</label>
+                            <span id="patientHeight">170 cm</span>
+                        </div>
+                        <div class="info-item">
+                            <label>BMI</label>
+                            <span id="patientBMI">24.2</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Sex</label>
+                            <span id="patientSex">Male</span>
+                        </div>
+                        <div class="info-item">
+                            <label>PK/PD Model</label>
+                            <span id="patientModel">Wierda</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Anesthesia Start</label>
+                            <span id="anesthesiaStart">08:00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="toDoseScheduleBtn" class="primary-btn">
+                    Go to Dosing Schedule →
+                </button>
+            </section>
+
+            <!-- Dose Schedule Tab -->
+            <section id="doseTab" class="tab-panel">
+                <div class="header">
+                    <h1>Dosing Schedule</h1>
+                    <p class="subtitle">Multiple dose changes are possible</p>
+                </div>
+
+                <div class="dose-events-container">
+                    <div id="doseEventsList" class="dose-events-list">
+                        <!-- Dose events will be added here dynamically -->
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button id="addDoseEventBtn" class="secondary-btn">
+                        ➕ Add Dose Event
+                    </button>
+                    <button id="runSimulationBtn" class="primary-btn" disabled>
+                        ▶️ Run Simulation
+                    </button>
+                </div>
+            </section>
+
+            <!-- Results Tab -->
+            <section id="resultsTab" class="tab-panel">
+                <div id="noResults" class="no-results">
+                    <div class="empty-icon">📊</div>
+                    <h2>No Simulation Results</h2>
+                    <p>Please run a simulation from the Dosing tab</p>
+                    <button id="toDoseTabBtn" class="primary-btn">Go to Dosing</button>
+                </div>
+
+                <div id="resultsContent" class="results-content hidden">
+                    <div class="header">
+                        <h1>Simulation Results</h1>
+                        <p id="calculationMethod" class="subtitle"></p>
+                    </div>
+
+                    <div class="summary-cards">
+                        <div class="summary-card plasma">
+                            <h4>Peak Plasma Concentration</h4>
+                            <span id="maxPlasma" class="value data-value">0.000</span>
+                            <span class="unit">µg/mL</span>
+                        </div>
+                        <div class="summary-card effect">
+                            <h4>Peak Effect-Site Concentration</h4>
+                            <span id="maxEffect" class="value data-value">0.000</span>
+                            <span class="unit">µg/mL</span>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="concentrationChart" width="400" height="300"></canvas>
+                    </div>
+
+                    <div class="results-table-container">
+                        <table id="resultsTable" class="results-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Plasma Concentration</th>
+                                    <th>Effect-Site Concentration</th>
+                                    <th>TOF Ratio</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Results will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <button id="exportCsvBtn" class="primary-btn">
+                        📤 Export CSV Data
+                    </button>
+                </div>
+            </section>
+
+            <!-- Info Tab -->
+            <section id="infoTab" class="tab-panel">
+                <div class="info-content">
+                    <div class="header">
+                        <div class="app-icon">💉</div>
+                        <h1>Rocuronium PK/PD Simulator</h1>
+                        <p class="version">Version 1.0.0</p>
+                    </div>
+
+                    <div class="card warning-card">
+                        <div class="card-header">
+                            <span class="warning-icon">⚠️</span>
+                            <h3>Important Usage Limitations</h3>
+                        </div>
+                        <div class="card-content">
+                            <p>This software is intended for educational and research purposes only.</p>
+                            <ul>
+                                <li>This software is not a medical device</li>
+                                <li>Do not use for diagnosis, treatment, or any clinical purposes or patient care</li>
+                                <li>The author assumes no responsibility for any results arising from the use of this software</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="card reference-card">
+                        <div class="card-header">
+                            <span class="reference-icon">📄</span>
+                            <h3>Scientific Evidence</h3>
+                        </div>
+                        <div class="card-content">
+                            <p>This application is based on the following research:</p>
+                            <div class="reference">
+                                <h4>Rocuronium Pharmacodynamic Model</h4>
+                                <p>Masui, K., Ishigaki, S., Tomita, A. et al.</p>
+                                <p>J Anesth 32, 709–716 (2018).</p>
+                                <p class="doi">doi:10.1007/s00540-018-2543-3</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card developer-card">
+                        <div class="card-header">
+                            <span class="developer-icon">👨‍💻</span>
+                            <h3>Developer Information</h3>
+                        </div>
+                        <div class="card-content">
+                            <h4>YASUYUKI SUZUKI</h4>
+                            <p class="orcid">ORCID: 0000-0002-4871-9685</p>
+                            <p><strong>Affiliation:</strong></p>
+                            <ul>
+                                <li>Department of Anesthesiology, Saiseikai Matsuyama Hospital</li>
+                                <li>Department of Pharmacology, Ehime University Graduate School of Medicine</li>
+                            </ul>
+                            <p class="tech">Development: JavaScript/HTML/CSS</p>
+                            <p class="tech">Developed with Claude Code (Anthropic)</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card calculation-card">
+                        <div class="card-header">
+                            <span class="calculation-icon">🧮</span>
+                            <h3>Calculation Model Details</h3>
+                        </div>
+                        <div class="card-content">
+                            <p>This simulator implements five pharmacokinetic (PK) models and their corresponding pharmacodynamic (PD) models validated in Masui et al. (2018). Different PK models may result in varying plasma and effect-site concentration profiles, requiring careful interpretation of results.</p>
+                            
+                            <div class="model-details">
+                                <h4>Wierda Model (1991)</h4>
+                                <p><strong>Features:</strong> One of the earliest referenced basic 3-compartment models, used as a comparison standard in many subsequent studies.</p>
+                                <p><strong>Clinical Significance:</strong> Serves as a benchmark for understanding rocuronium kinetics in standard patients. Shows similar plasma concentration profiles to Cooper and Alvarez-Gomez models.</p>
+                            </div>
+
+                            <div class="model-details">
+                                <h4>Szenohradszky Model (1992)</h4>
+                                <p><strong>Features:</strong> 3-compartment model built from data in normal kidney function and kidney transplant patients. Tends to calculate significantly higher initial plasma concentrations compared to other models.</p>
+                                <p><strong>Clinical Significance:</strong> May overestimate plasma concentrations according to the literature. Consequently calculates higher effect-site concentrations and may predict faster TOF ratio recovery than other models.</p>
+                            </div>
+
+                            <div class="model-details">
+                                <h4>Cooper Model (1993)</h4>
+                                <p><strong>Features:</strong> 3-compartment model from research comparing the effects of kidney function. Shows relatively similar kinetics to the Wierda model.</p>
+                                <p><strong>Clinical Significance:</strong> Referenced as a general-purpose model alongside Wierda and Alvarez-Gomez, developed with kidney function impairment patients in mind.</p>
+                            </div>
+
+                            <div class="model-details">
+                                <h4>Alvarez-Gomez Model (1994)</h4>
+                                <p><strong>Features:</strong> 3-compartment model for adult patients. Shows very similar simulation results to Wierda and Cooper in this comparative study.</p>
+                                <p><strong>Clinical Significance:</strong> Widely accepted as one of the standard models, with validity verified in multiple studies.</p>
+                            </div>
+
+                            <div class="model-details">
+                                <h4>McCoy Model (1996)</h4>
+                                <p><strong>Features:</strong> The only 2-compartment model among these options. PD parameter (ke0) is not affected by age.</p>
+                                <p><strong>Clinical Significance:</strong> Simpler model structure allows easier calculation but may differ from 3-compartment models, especially in distribution phase representation. Tends to calculate higher effect-site concentrations than other models during the first 30 minutes post-administration.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card privacy-card">
+                        <div class="card-header">
+                            <span class="privacy-icon">🔒</span>
+                            <h3>Data and Privacy</h3>
+                        </div>
+                        <div class="card-content">
+                            <p>This software does not collect, store, or transmit any data entered by users. All calculations are performed locally in your browser.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Patient Editor Modal -->
+    <div id="patientModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Patient Information</h3>
+                <button id="closePatientModal" class="close-btn">×</button>
+            </div>
+            <form id="patientForm" class="patient-form">
+                <div class="form-group">
+                    <label for="editPatientId">Patient ID</label>
+                    <input type="text" id="editPatientId" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editAge">Age (years): <span id="ageValue">50</span></label>
+                    <input type="range" id="editAge" min="18" max="100" value="50">
+                </div>
+                
+                <div class="form-group">
+                    <label for="editWeight">Weight (kg): <span id="weightValue">70.0</span></label>
+                    <input type="range" id="editWeight" min="30" max="200" step="0.5" value="70">
+                </div>
+                
+                <div class="form-group">
+                    <label for="editHeight">Height (cm): <span id="heightValue">170</span></label>
+                    <input type="range" id="editHeight" min="120" max="220" value="170">
+                </div>
+                
+                <div class="form-group">
+                    <label>Sex</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="sex" value="male" checked> Male</label>
+                        <label><input type="radio" name="sex" value="female"> Female</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="editModel">PK/PD Model</label>
+                    <select id="editModel">
+                        <option value="Wierda" selected>Wierda</option>
+                        <option value="Szenohradszky">Szenohradszky</option>
+                        <option value="Cooper">Cooper</option>
+                        <option value="AlvarezGomez">Alvarez-Gomez</option>
+                        <option value="McCoy">McCoy</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editAnesthesiaStart">Anesthesia Start Time</label>
+                    <input type="time" id="editAnesthesiaStart" value="08:00">
+                </div>
+                
+                <div class="form-group">
+                    <label>BMI: <span id="bmiCalculated">24.2</span></label>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" id="cancelPatientEdit" class="secondary-btn">Cancel</button>
+                    <button type="submit" class="primary-btn">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dose Event Modal -->
+    <div id="doseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Dose Event</h3>
+                <button id="closeDoseModal" class="close-btn">×</button>
+            </div>
+            <form id="doseForm" class="dose-form">
+                <div class="form-group">
+                    <label>Anesthesia Start: <span id="anesthesiaStartTime">08:00</span></label>
+                </div>
+                
+                <div class="form-group">
+                    <label for="doseTime">Dose Time</label>
+                    <input type="time" id="doseTime" value="08:00" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bolusAmount">Bolus Dose (mg): <span id="bolusValue">0.0</span></label>
+                    <input type="range" id="bolusAmount" min="0" max="100" step="1" value="0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="continuousRate">Continuous Infusion (μg/kg/min): <span id="continuousValue">0.0</span></label>
+                    <input type="range" id="continuousRate" min="0" max="30" step="0.1" value="0">
+                </div>
+                
+                <p class="note">Set both bolus and continuous infusion to 0 to stop dosing</p>
+                
+                <div class="form-actions">
+                    <button type="button" id="cancelDoseAdd" class="secondary-btn">Cancel</button>
+                    <button type="submit" class="primary-btn">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/models.js"></script>
+    <script src="js/calculator.js"></script>
+    <script src="js/main.js"></script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('sw.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registration successful');
+                    }, function(err) {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
