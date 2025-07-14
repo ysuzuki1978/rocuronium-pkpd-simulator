@@ -2,6 +2,10 @@
 
 A web-based pharmacokinetic and pharmacodynamic simulator for rocuronium neuromuscular blocking agent, implementing five validated pharmacokinetic models with age and sex covariates for effect-site concentration prediction.
 
+## Quick Access
+
+**🚀 Live Application**: https://ysuzuki1978.github.io/rocuronium-pkpd-simulator/
+
 ## Overview
 
 This application provides real-time simulation of rocuronium plasma and effect-site concentrations using established pharmacokinetic models. The simulator incorporates patient-specific covariates (age, sex, body weight) to predict neuromuscular blockade progression and recovery, supporting clinical education and research applications.
