@@ -390,21 +390,21 @@ function updateChart() {
             labels: labels,
             datasets: [
                 {
-                    label: '血漿濃度 (µg/mL)',
+                    label: 'Plasma Concentration (µg/mL)',
                     data: plasmaData,
                     borderColor: 'rgba(0, 122, 255, 1)',
                     yAxisID: 'y-conc',
                     tension: 0.2, pointRadius: 0
                 },
                 {
-                    label: '効果部位濃度 (µg/mL)',
+                    label: 'Effect Site Concentration (µg/mL)',
                     data: effectData,
                     borderColor: 'rgba(255, 149, 0, 1)',
                     yAxisID: 'y-conc',
                     tension: 0.2, pointRadius: 0
                 },
                 {
-                    label: 'TOF比 (%)',
+                    label: 'TOF Ratio (%)',
                     data: tofData,
                     borderColor: 'rgba(52, 199, 89, 1)',
                     backgroundColor: 'rgba(52, 199, 89, 0.1)',
@@ -419,17 +419,17 @@ function updateChart() {
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             scales: {
-                x: { title: { display: true, text: '時刻' } },
+                x: { title: { display: true, text: 'Time' } },
                 'y-conc': {
                     type: 'linear',
                     position: 'left',
-                    title: { display: true, text: '濃度 (µg/mL)' },
+                    title: { display: true, text: 'Concentration (µg/mL)' },
                     beginAtZero: true
                 },
                 'y-tof': {
                     type: 'linear',
                     position: 'right',
-                    title: { display: true, text: 'TOF比 (%)' },
+                    title: { display: true, text: 'TOF Ratio (%)' },
                     min: 0,
                     max: 100,
                     grid: { drawOnChartArea: false }
