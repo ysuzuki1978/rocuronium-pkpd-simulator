@@ -172,6 +172,16 @@ class SystemState {
     }
 }
 
+// Unified System State Class (4-dimensional: a1, a2, a3, Ce)
+class UnifiedSystemState {
+    constructor(a1 = 0.0, a2 = 0.0, a3 = 0.0, ce = 0.0) {
+        this.a1 = a1;  // Central compartment amount (mg)
+        this.a2 = a2;  // Peripheral compartment 1 amount (mg)
+        this.a3 = a3;  // Peripheral compartment 2 amount (mg)
+        this.ce = ce;  // Effect-site concentration (μg/mL)
+    }
+}
+
 // Time Point Class
 class TimePoint {
     constructor(timeInMinutes, doseEvent, plasmaConcentration, effectSiteConcentration, tofRatio) {

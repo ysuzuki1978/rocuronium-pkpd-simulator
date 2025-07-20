@@ -1,7 +1,8 @@
 {
   "short_name": "RocSim",
-  "name": "Rocuronium PK/PD Simulator",
-  "description": "Professional pharmacokinetic and pharmacodynamic simulator for rocuronium",
+  "name": "Rocuronium PK/PD Simulator V1.1.0",
+  "description": "Professional pharmacokinetic and pharmacodynamic simulator for rocuronium with enhanced RK4 integration",
+  "version": "1.1.0",
   "start_url": "./index.html",
   "display": "standalone",
   "theme_color": "#0d6efd",

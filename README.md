@@ -13,6 +13,7 @@ This application provides real-time simulation of rocuronium plasma and effect-s
 ## Features
 
 - **Five Pharmacokinetic Models**: Wierda, Szenohradszky, Cooper, Alvarez-Gomez, and McCoy models
+- **Enhanced RK4 Integration (V1.1.0)**: Unified 4-dimensional Runge-Kutta system for superior numerical precision
 - **Covariate Integration**: Age and sex effects on pharmacodynamic parameters
 - **Real-time Visualization**: Interactive graphs showing plasma concentration, effect-site concentration, and TOF ratio
 - **Progressive Web App**: Offline functionality with responsive design
@@ -46,8 +47,8 @@ The application implements compartmental models with the following parameters:
 
 - **Three-compartment models**: Wierda, Szenohradszky, Cooper, Alvarez-Gomez
 - **Two-compartment model**: McCoy
-- **Numerical integration**: Fourth-order Runge-Kutta method for plasma concentrations
-- **Effect-site modeling**: First-order kinetics with Euler integration
+- **Unified RK4 Integration**: Fourth-order Runge-Kutta method for both plasma and effect-site concentrations
+- **4-Dimensional System**: Simultaneous calculation of a1, a2, a3, and Ce compartments for enhanced accuracy
 
 ### Pharmacodynamic Model
 

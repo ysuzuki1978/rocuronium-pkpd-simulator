@@ -81,11 +81,8 @@ class PKCalculationEngine {
             times.push(t);
         }
 
-        // --- Plasma Concentration Calculation ---
-        const plasmaConcentrations = this.calculatePlasmaConcentrations(patient, doseEvents, times, pk);
-
-        // --- Effect-Site Concentration Calculation ---
-        const effectSiteConcentrations = this.calculateEffectSiteConcentrations(plasmaConcentrations, times, pd.ke0);
+        // --- Unified 4-Dimensional RK4 Calculation (a1, a2, a3, Ce) ---
+        const { plasmaConcentrations, effectSiteConcentrations } = this.calculateUnifiedConcentrations(patient, doseEvents, times, pk, pd);
 
         // --- TOF Ratio Calculation ---
         const tofRatios = this.calculateTofRatios(effectSiteConcentrations, pd);
@@ -116,10 +113,11 @@ class PKCalculationEngine {
         );
     }
 
-    calculatePlasmaConcentrations(patient, doseEvents, times, pkParams) {
+    calculateUnifiedConcentrations(patient, doseEvents, times, pkParams, pdParams) {
         const timeStep = times.length > 1 ? times[1] - times[0] : 0.01;
-        let state = new SystemState();
+        let state = new UnifiedSystemState(); // a1, a2, a3, ce
         const plasmaConcentrations = [];
+        const effectSiteConcentrations = [];
 
         const infusionSchedule = this.createInfusionSchedule(doseEvents, patient);
         let currentInfusionRate = 0.0; // mg/min
@@ -143,11 +141,13 @@ class PKCalculationEngine {
 
             const plasmaConc = Math.max(0.0, state.a1 / pkParams.v1);
             plasmaConcentrations.push(plasmaConc);
+            effectSiteConcentrations.push(Math.max(0.0, state.ce));
 
-            state = this.updateSystemState(state, pkParams, currentInfusionRate, timeStep);
+            // Update system state using unified 4-dimensional RK4
+            state = this.updateUnifiedSystemState(state, pkParams, pdParams, currentInfusionRate, timeStep);
         }
 
-        return plasmaConcentrations;
+        return { plasmaConcentrations, effectSiteConcentrations };
     }
 
     createInfusionSchedule(doseEvents, patient) {
@@ -164,6 +164,59 @@ class PKCalculationEngine {
         return schedule;
     }
 
+    updateUnifiedSystemState(state, pk, pd, infusionRate, dt) {
+        const { k10, k12, k21, k13, k31, v1 } = pk;
+        const { ke0 } = pd;
+        
+        const derivatives = (s) => {
+            const plasmaConc = s.a1 / v1;
+            const da1_dt = infusionRate - (k10 + k12 + k13) * s.a1 + k21 * s.a2 + k31 * s.a3;
+            const da2_dt = k12 * s.a1 - k21 * s.a2;
+            const da3_dt = k13 * s.a1 - k31 * s.a3;
+            const dce_dt = ke0 * (plasmaConc - s.ce);
+            return { da1: da1_dt, da2: da2_dt, da3: da3_dt, dce: dce_dt };
+        };
+
+        // 4th order Runge-Kutta integration for 4-dimensional system
+        const k1 = derivatives(state);
+        const k2_state = new UnifiedSystemState(
+            state.a1 + dt * k1.da1 / 2, 
+            state.a2 + dt * k1.da2 / 2, 
+            state.a3 + dt * k1.da3 / 2, 
+            state.ce + dt * k1.dce / 2
+        );
+        const k2 = derivatives(k2_state);
+        const k3_state = new UnifiedSystemState(
+            state.a1 + dt * k2.da1 / 2, 
+            state.a2 + dt * k2.da2 / 2, 
+            state.a3 + dt * k2.da3 / 2, 
+            state.ce + dt * k2.dce / 2
+        );
+        const k3 = derivatives(k3_state);
+        const k4_state = new UnifiedSystemState(
+            state.a1 + dt * k3.da1, 
+            state.a2 + dt * k3.da2, 
+            state.a3 + dt * k3.da3, 
+            state.ce + dt * k3.dce
+        );
+        const k4 = derivatives(k4_state);
+
+        const newState = new UnifiedSystemState();
+        newState.a1 = state.a1 + dt * (k1.da1 + 2 * k2.da1 + 2 * k3.da1 + k4.da1) / 6;
+        newState.a2 = state.a2 + dt * (k1.da2 + 2 * k2.da2 + 2 * k3.da2 + k4.da2) / 6;
+        newState.a3 = state.a3 + dt * (k1.da3 + 2 * k2.da3 + 2 * k3.da3 + k4.da3) / 6;
+        newState.ce = state.ce + dt * (k1.dce + 2 * k2.dce + 2 * k3.dce + k4.dce) / 6;
+
+        // Ensure non-negative values
+        newState.a1 = Math.max(0.0, newState.a1);
+        newState.a2 = Math.max(0.0, newState.a2);
+        newState.a3 = Math.max(0.0, newState.a3);
+        newState.ce = Math.max(0.0, newState.ce);
+
+        return newState;
+    }
+
+    // Legacy method for backward compatibility
     updateSystemState(state, pk, infusionRate, dt) {
         const { k10, k12, k21, k13, k31 } = pk;
         
@@ -196,7 +249,10 @@ class PKCalculationEngine {
         return newState;
     }
 
+    // Legacy Euler method for effect-site concentrations (deprecated)
+    // Now replaced by unified 4-dimensional RK4 system
     calculateEffectSiteConcentrations(plasmaConcentrations, timePoints, ke0) {
+        console.warn("Using deprecated Euler method for effect-site calculation. Consider using unified RK4 approach.");
         const ceValues = new Array(timePoints.length).fill(0);
         ceValues[0] = 0.0;
         
