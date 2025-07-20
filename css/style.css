@@ -658,6 +658,18 @@ p {
   margin: 0;
 }
 
+.rk4-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
 .warning-card .card-header {
   background-color: var(--color-warning-light);
   border-color: var(--color-warning);
@@ -676,6 +688,32 @@ p {
 .developer-card .developer-icon {
   color: var(--color-primary);
   font-size: 1.25rem;
+}
+
+.technical-card .technical-icon {
+  color: #667eea;
+  font-size: 1.25rem;
+}
+
+.technical-card .technical-details {
+  margin-top: 1rem;
+}
+
+.technical-card .technical-details h4 {
+  color: var(--color-primary);
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.technical-card .technical-details ul {
+  margin-left: 1rem;
+  margin-bottom: 1rem;
+}
+
+.technical-card .technical-details li {
+  margin-bottom: 0.25rem;
+  line-height: 1.4;
 }
 
 .calculation-card .calculation-icon {
