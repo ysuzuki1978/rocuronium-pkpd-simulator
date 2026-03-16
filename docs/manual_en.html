@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rocuronium PK/PD Simulator V1.1.0 User Manual</title>
+    <style>
+        /* ============================================ */
+        /* Base Styles                                  */
+        /* ============================================ */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #222222;
+            --bg-card: #2a2a2a;
+            --bg-code: #333333;
+            --accent: #00BCD4;
+            --accent-dim: #00838f;
+            --text-primary: #e0e0e0;
+            --text-secondary: #aaaaaa;
+            --text-heading: #ffffff;
+            --border: #3a3a3a;
+            --warning-bg: #3a2a00;
+            --warning-border: #d4a000;
+            --warning-text: #ffd54f;
+            --tip-bg: #002a2e;
+            --tip-border: #00838f;
+            --danger-bg: #3a1010;
+            --danger-border: #c62828;
+            --danger-text: #ef9a9a;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* ============================================ */
+        /* Layout                                       */
+        /* ============================================ */
+        .manual-container {
+            max-width: 840px;
+            margin: 0 auto;
+            padding: 20px 24px 60px;
+        }
+
+        /* ============================================ */
+        /* Header                                       */
+        /* ============================================ */
+        .manual-header {
+            text-align: center;
+            padding: 40px 0 30px;
+            border-bottom: 2px solid var(--accent);
+            margin-bottom: 40px;
+        }
+
+        .manual-header h1 {
+            font-size: 1.8rem;
+            color: var(--accent);
+            margin: 0 0 8px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .manual-header .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin: 0 0 16px;
+        }
+
+        .manual-header .meta {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .manual-header .meta span {
+            display: inline-block;
+            margin: 0 8px;
+        }
+
+        .lang-switch {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 6px 16px;
+            border: 1px solid var(--accent);
+            border-radius: 4px;
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: background 0.2s;
+        }
+
+        .lang-switch:hover {
+            background-color: var(--accent);
+            color: var(--bg-primary);
+        }
+
+        /* ============================================ */
+        /* Table of Contents                            */
+        /* ============================================ */
+        .toc {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px 28px;
+            margin-bottom: 40px;
+        }
+
+        .toc h2 {
+            color: var(--text-heading);
+            font-size: 1.2rem;
+            margin: 0 0 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .toc ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .toc li {
+            margin-bottom: 6px;
+        }
+
+        .toc a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        .toc ol ol {
+            margin-top: 6px;
+            padding-left: 18px;
+        }
+
+        .toc ol ol li {
+            margin-bottom: 4px;
+            font-size: 0.93rem;
+        }
+
+        /* ============================================ */
+        /* Sections and Headings                        */
+        /* ============================================ */
+        section {
+            margin-bottom: 48px;
+        }
+
+        h2 {
+            color: var(--accent);
+            font-size: 1.5rem;
+            margin: 0 0 20px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--accent-dim);
+        }
+
+        h3 {
+            color: var(--text-heading);
+            font-size: 1.15rem;
+            margin: 28px 0 12px;
+        }
+
+        h4 {
+            color: var(--accent);
+            font-size: 1rem;
+            margin: 20px 0 8px;
+        }
+
+        p {
+            margin: 0 0 14px;
+        }
+
+        /* ============================================ */
+        /* Screenshots                                  */
+        /* ============================================ */
+        .screenshot {
+            display: block;
+            max-width: 300px;
+            margin: 20px auto;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .screenshot-caption {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: -10px;
+            margin-bottom: 20px;
+        }
+
+        /* ============================================ */
+        /* Callout Boxes                                */
+        /* ============================================ */
+        .callout {
+            border-radius: 6px;
+            padding: 14px 18px;
+            margin: 16px 0;
+            font-size: 0.93rem;
+        }
+
+        .callout-warning {
+            background-color: var(--warning-bg);
+            border-left: 4px solid var(--warning-border);
+            color: var(--warning-text);
+        }
+
+        .callout-tip {
+            background-color: var(--tip-bg);
+            border-left: 4px solid var(--tip-border);
+            color: var(--accent);
+        }
+
+        .callout-danger {
+            background-color: var(--danger-bg);
+            border-left: 4px solid var(--danger-border);
+            color: var(--danger-text);
+        }
+
+        .callout strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* ============================================ */
+        /* Lists                                        */
+        /* ============================================ */
+        ul, ol {
+            padding-left: 22px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        /* ============================================ */
+        /* Procedure Steps                              */
+        /* ============================================ */
+        .procedure {
+            counter-reset: proc-step;
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .procedure li {
+            counter-increment: proc-step;
+            padding: 10px 14px 10px 48px;
+            position: relative;
+            margin-bottom: 10px;
+            background-color: var(--bg-secondary);
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-dim);
+        }
+
+        .procedure li::before {
+            content: counter(proc-step);
+            position: absolute;
+            left: 14px;
+            top: 10px;
+            width: 24px;
+            height: 24px;
+            background-color: var(--accent);
+            color: var(--bg-primary);
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        /* ============================================ */
+        /* Tables                                       */
+        /* ============================================ */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 0.93rem;
+        }
+
+        th, td {
+            padding: 10px 14px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: var(--bg-card);
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        td {
+            background-color: var(--bg-secondary);
+        }
+
+        /* ============================================ */
+        /* Inline Code and Keyboard Keys                */
+        /* ============================================ */
+        code {
+            background-color: var(--bg-code);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.9em;
+            color: var(--accent);
+        }
+
+        kbd {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.85em;
+            font-family: inherit;
+            color: var(--text-heading);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        /* ============================================ */
+        /* Footer                                       */
+        /* ============================================ */
+        .manual-footer {
+            text-align: center;
+            padding: 30px 0 0;
+            border-top: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .manual-footer p {
+            margin: 4px 0;
+        }
+
+        /* ============================================ */
+        /* Responsive                                   */
+        /* ============================================ */
+        @media (max-width: 600px) {
+            .manual-container {
+                padding: 12px 16px 40px;
+            }
+
+            .manual-header h1 {
+                font-size: 1.4rem;
+            }
+
+            h2 {
+                font-size: 1.25rem;
+            }
+
+            .toc {
+                padding: 16px 18px;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+
+            th, td {
+                padding: 8px 10px;
+            }
+
+            .procedure li {
+                padding-left: 42px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="manual-container">
+
+    <!-- ============================================ -->
+    <!-- HEADER                                       -->
+    <!-- ============================================ -->
+    <header class="manual-header">
+        <h1>Rocuronium PK/PD Simulator V1.1.0 User Manual</h1>
+        <p class="subtitle">Rocuronium Pharmacokinetic/Pharmacodynamic Simulator</p>
+        <div class="meta">
+            <span>Developer: YASUYUKI SUZUKI, MD, PhD</span><br>
+            <span style="font-size:0.85em;">Saiseikai Matsuyama Hospital, Dept. of Anaesthesiology / Ehime University Graduate School of Medicine, Dept. of Pharmacology</span>
+        </div>
+        <div class="meta">
+            <span>PD Model: Masui et al. (2018) J Anesth 32:709-716</span>
+        </div>
+        <a href="manual_ja.html" class="lang-switch">&#26085;&#26412;&#35486;&#29256;</a>
+    </header>
+
+    <!-- ============================================ -->
+    <!-- TABLE OF CONTENTS                            -->
+    <!-- ============================================ -->
+    <nav class="toc">
+        <h2>Table of Contents</h2>
+        <ol>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#getting-started">Getting Started</a>
+                <ol>
+                    <li><a href="#installation">Installation (PWA)</a></li>
+                    <li><a href="#disclaimer">Disclaimer Screen</a></li>
+                    <li><a href="#patient-settings">Patient Settings</a></li>
+                </ol>
+            </li>
+            <li><a href="#dosing">Dosing Schedule</a>
+                <ol>
+                    <li><a href="#dosing-events">Adding Dose Events</a></li>
+                    <li><a href="#dosing-params">Dose Parameters</a></li>
+                    <li><a href="#dosing-stop">Stopping Dosing</a></li>
+                </ol>
+            </li>
+            <li><a href="#results">Simulation Results</a>
+                <ol>
+                    <li><a href="#results-summary">Summary Cards</a></li>
+                    <li><a href="#results-chart">Concentration Chart</a></li>
+                    <li><a href="#results-table">Data Table</a></li>
+                </ol>
+            </li>
+            <li><a href="#csv-export">CSV Export</a></li>
+            <li><a href="#pkpd-models">PK/PD Models Reference</a></li>
+            <li><a href="#units">Units Reference</a></li>
+            <li><a href="#tips">Tips and Best Practices</a></li>
+            <li><a href="#troubleshooting">Troubleshooting</a></li>
+            <li><a href="#disclaimer-full">Disclaimer and Terms of Use</a></li>
+        </ol>
+    </nav>
+
+    <!-- ============================================ -->
+    <!-- 1. OVERVIEW                                  -->
+    <!-- ============================================ -->
+    <section id="overview">
+        <h2>1. Overview</h2>
+        <p>
+            Rocuronium PK/PD Simulator is a pharmacokinetic/pharmacodynamic simulation tool designed for educational and research use. It predicts plasma concentration (Cp), effect-site concentration (Ce), and Train-of-Four (TOF) ratio of rocuronium based on three-compartment pharmacokinetic models and a pharmacodynamic model.
+        </p>
+        <p>
+            The application provides a straightforward simulation workflow through four tabs:
+        </p>
+        <ul>
+            <li><strong>Patient</strong> -- Configure patient demographics and select a PK/PD model.</li>
+            <li><strong>Dosing</strong> -- Define a dosing schedule with bolus and continuous infusion events.</li>
+            <li><strong>Results</strong> -- View simulated concentration-time curves, TOF ratio, and tabular data.</li>
+            <li><strong>Info</strong> -- Application information, version details, and references.</li>
+        </ul>
+        <p>
+            Five published PK models are available (Wierda, Szenohradszky, Cooper, Alvarez-Gomez, McCoy), combined with the PD model by Masui et al. (2018). The simulator uses enhanced RK4 (Runge-Kutta 4th order) numerical integration for accurate concentration and effect predictions.
+        </p>
+
+        <div class="callout callout-danger">
+            <strong>Not for Clinical Use</strong>
+            This application is strictly for educational and research purposes. It must not be used as a basis for clinical diagnosis or treatment decisions. All clinical decisions must be made under the responsibility of qualified medical professionals. Calculation results are theoretical values.
+        </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- 2. GETTING STARTED                           -->
+    <!-- ============================================ -->
+    <section id="getting-started">
+        <h2>2. Getting Started</h2>
+
+        <h3 id="installation">2.1 Installation (PWA)</h3>
+        <p>
+            The application is a Progressive Web App (PWA). Once loaded in a browser, it can be installed to your home screen and used offline. This is particularly useful for iPhone and iPad users in environments without reliable network access.
+        </p>
+        <p>To install on iPhone / iPad (Safari):</p>
+        <ol class="procedure">
+            <li>Open the application URL in Safari.</li>
+            <li>Tap the Share button (square with upward arrow) in the browser toolbar.</li>
+            <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
+            <li>Tap <strong>Add</strong> to confirm. The app icon will appear on your home screen.</li>
+        </ol>
+        <p>
+            After installation, the app launches in full-screen mode without browser navigation bars and works entirely offline.
+        </p>
+
+        <h3 id="disclaimer">2.2 Disclaimer Screen</h3>
+        <p>
+            When the application starts, a disclaimer modal is displayed. You must read and accept the terms before proceeding.
+        </p>
+        <img src="images/01_disclaimer.png" alt="Disclaimer modal showing important notice about educational and research use only" class="screenshot">
+        <p class="screenshot-caption">Figure 1: Disclaimer / Important Notice modal</p>
+        <p>
+            Tap <kbd>Accept and Start</kbd> to proceed to the main application.
+        </p>
+
+        <h3 id="patient-settings">2.3 Patient Settings</h3>
+        <p>
+            The Patient tab is the first screen after accepting the disclaimer. Patient parameters directly affect pharmacokinetic calculations. Configure patient demographics here before proceeding to the Dosing tab.
+        </p>
+        <img src="images/02_patient.png" alt="Patient tab showing patient demographic fields and PK model selector" class="screenshot">
+        <p class="screenshot-caption">Figure 2: Patient tab</p>
+
+        <p>
+            To edit patient information, tap the edit button to open the Patient Edit modal.
+        </p>
+        <img src="images/03_patient_edit.png" alt="Patient edit modal with range sliders for age, weight, and height" class="screenshot">
+        <p class="screenshot-caption">Figure 3: Patient Edit modal</p>
+
+        <p>The following parameters can be configured:</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Range</th>
+                    <th>Default</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Patient ID</td>
+                    <td>Free text</td>
+                    <td>Auto-generated</td>
+                    <td>Identifier for record keeping</td>
+                </tr>
+                <tr>
+                    <td>Age</td>
+                    <td>18 -- 100</td>
+                    <td>50</td>
+                    <td>Patient age in years</td>
+                </tr>
+                <tr>
+                    <td>Weight</td>
+                    <td>30 -- 200 kg</td>
+                    <td>70 kg</td>
+                    <td>Body weight</td>
+                </tr>
+                <tr>
+                    <td>Height</td>
+                    <td>120 -- 220 cm</td>
+                    <td>170 cm</td>
+                    <td>Height</td>
+                </tr>
+                <tr>
+                    <td>Sex</td>
+                    <td>Male / Female</td>
+                    <td>Male</td>
+                    <td>Biological sex</td>
+                </tr>
+                <tr>
+                    <td>PK/PD Model</td>
+                    <td>5 models</td>
+                    <td>Wierda</td>
+                    <td>Pharmacokinetic model selection (see Section 6)</td>
+                </tr>
+                <tr>
+                    <td>Anesthesia Start</td>
+                    <td>HH:MM</td>
+                    <td>08:00</td>
+                    <td>Start time used for dose event timestamps</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="callout callout-tip">
+            <strong>Tip</strong>
+            All demographic inputs use range sliders for quick adjustment. Drag the slider or tap anywhere on the track to set the desired value. The current value is displayed alongside the slider.
+        </div>
+
+        <div class="callout callout-warning">
+            <strong>Note</strong>
+            Set patient parameters before adding dose events and running the simulation. Changing patient parameters or the PK model after running a simulation will require re-running the calculation for accurate results.
+        </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- 3. DOSING SCHEDULE                           -->
+    <!-- ============================================ -->
+    <section id="dosing">
+        <h2>3. Dosing Schedule</h2>
+        <p>
+            The Dosing tab allows you to define a sequence of dose events that describe the rocuronium administration schedule. Each event specifies a point in time with an optional bolus dose and/or a continuous infusion rate change.
+        </p>
+
+        <img src="images/04_dosing.png" alt="Dosing tab showing the default dose event entry" class="screenshot">
+        <p class="screenshot-caption">Figure 4: Dosing tab with default dose event</p>
+
+        <h3 id="dosing-events">3.1 Adding Dose Events</h3>
+        <p>
+            A default initial dose event is pre-populated when the app starts. To add additional dose events:
+        </p>
+        <ol class="procedure">
+            <li>Tap the <kbd>+ Add Dose Event</kbd> button on the Dosing tab.</li>
+            <li>In the Add Dose Event modal, set the <strong>Time</strong> (minutes from anesthesia start or clock time).</li>
+            <li>Enter a <strong>Bolus</strong> amount in mg (0 -- 100 mg). Set to 0 if no bolus is given at this time point.</li>
+            <li>Enter the <strong>Continuous</strong> infusion rate in &mu;g/kg/min (0 -- 30 &mu;g/kg/min). Set to 0 if no continuous infusion.</li>
+            <li>Tap <kbd>Add</kbd> to save the dose event.</li>
+        </ol>
+
+        <img src="images/05_dose_event.png" alt="Add Dose Event modal with time, bolus, and continuous rate fields" class="screenshot">
+        <p class="screenshot-caption">Figure 5: Add Dose Event modal</p>
+
+        <h3 id="dosing-params">3.2 Dose Parameters</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Unit</th>
+                    <th>Range</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Time</td>
+                    <td>minutes / HH:MM</td>
+                    <td>From anesthesia start</td>
+                    <td>Time point at which the dose event occurs</td>
+                </tr>
+                <tr>
+                    <td>Bolus</td>
+                    <td>mg</td>
+                    <td>0 -- 100</td>
+                    <td>Single bolus dose of rocuronium (total amount, not weight-based)</td>
+                </tr>
+                <tr>
+                    <td>Continuous</td>
+                    <td>&mu;g/kg/min</td>
+                    <td>0 -- 30</td>
+                    <td>Continuous infusion rate (weight-based, per minute)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="callout callout-warning">
+            <strong>Note on Units</strong>
+            The bolus dose is specified in <strong>mg</strong> (total dose), while the continuous infusion rate is specified in <strong>&mu;g/kg/min</strong> (weight-based rate per minute). This reflects standard clinical practice for rocuronium administration.
+        </div>
+
+        <h3 id="dosing-stop">3.3 Stopping Dosing</h3>
+        <p>
+            To simulate the cessation of a continuous infusion, add a dose event at the desired stop time with both bolus and continuous rate set to 0. This instructs the simulator to halt all drug delivery from that time point onward, allowing the model to predict the decay of plasma and effect-site concentrations and the recovery of TOF ratio.
+        </p>
+        <p>
+            Existing dose events can be removed by tapping the delete button associated with each event entry.
+        </p>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- 4. SIMULATION RESULTS                        -->
+    <!-- ============================================ -->
+    <section id="results">
+        <h2>4. Simulation Results</h2>
+        <p>
+            After configuring patient parameters and dose events, navigate to the Results tab to run the simulation and view the predicted concentration-time profiles and neuromuscular blockade.
+        </p>
+
+        <h3 id="results-summary">4.1 Summary Cards</h3>
+        <p>
+            The top of the Results tab displays summary cards showing key simulation outputs:
+        </p>
+        <ul>
+            <li><strong>Plasma Concentration (Cp)</strong> -- Peak predicted plasma concentration in &mu;g/mL.</li>
+            <li><strong>Effect-site Concentration (Ce)</strong> -- Peak predicted effect-site concentration in &mu;g/mL.</li>
+            <li><strong>TOF Ratio</strong> -- Minimum predicted Train-of-Four ratio as a percentage. A TOF ratio of 0% indicates complete neuromuscular blockade; 100% indicates full recovery.</li>
+        </ul>
+
+        <h3 id="results-chart">4.2 Concentration Chart</h3>
+        <p>
+            The concentration chart is the primary visualization of the simulation results. It plots three curves over time:
+        </p>
+        <ul>
+            <li><strong>Plasma Concentration (Cp)</strong> -- Shown on the left y-axis (&mu;g/mL).</li>
+            <li><strong>Effect-site Concentration (Ce)</strong> -- Shown on the left y-axis (&mu;g/mL).</li>
+            <li><strong>TOF Ratio</strong> -- Shown on the right y-axis (%).</li>
+        </ul>
+        <p>
+            The dual y-axis design allows simultaneous visualization of drug concentrations and their pharmacodynamic effect (neuromuscular blockade). The x-axis represents elapsed time from anesthesia start.
+        </p>
+
+        <img src="images/06_results.png" alt="Results tab showing concentration chart with dual y-axes for concentration and TOF ratio" class="screenshot">
+        <p class="screenshot-caption">Figure 6: Results tab with concentration and TOF ratio chart</p>
+
+        <h3 id="results-table">4.3 Data Table</h3>
+        <p>
+            Below the chart, a data table provides the numerical simulation output at each time step. The table includes columns for time, plasma concentration, effect-site concentration, and TOF ratio. Scroll down to view the full dataset.
+        </p>
+
+        <img src="images/07_results_table.png" alt="Results data table showing timestamped concentration and TOF ratio values" class="screenshot">
+        <p class="screenshot-caption">Figure 7: Results data table</p>
+
+        <div class="callout callout-tip">
+            <strong>Tip</strong>
+            The chart uses the enhanced RK4 (Runge-Kutta 4th order) integration method introduced in V1.1.0 for improved numerical accuracy, particularly during rapid concentration changes following bolus injections.
+        </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- 5. CSV EXPORT                                -->
+    <!-- ============================================ -->
+    <section id="csv-export">
+        <h2>5. CSV Export</h2>
+        <p>
+            The simulation data can be exported as a CSV file for further analysis in spreadsheet software, statistical tools, or graphing applications.
+        </p>
+        <ol class="procedure">
+            <li>Navigate to the Results tab and ensure the simulation has been run.</li>
+            <li>Tap the <kbd>Export CSV</kbd> button.</li>
+            <li>The CSV file is generated and downloaded. It includes timestamped columns for plasma concentration, effect-site concentration, and TOF ratio.</li>
+        </ol>
+        <p>
+            The exported file contains the complete time-series data at each simulation time step, suitable for creating publication-quality figures or performing additional statistical analysis.
+        </p>
+
+        <div class="callout callout-tip">
+            <strong>Tip</strong>
+            On iOS, the CSV file can be saved to the Files app or shared directly via AirDrop, email, or other share sheet options.
+        </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- 6. PK/PD MODELS REFERENCE                    -->
+    <!-- ============================================ -->
+    <section id="pkpd-models">
+        <h2>6. PK/PD Models Reference</h2>
+        <p>
+            The simulator includes five published three-compartment pharmacokinetic models for rocuronium, combined with a pharmacodynamic model for TOF ratio prediction.
+        </p>
+
+        <h3>Pharmacokinetic Models</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Model</th>
+                    <th>Reference</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Wierda</td>
+                    <td>Wierda et al.</td>
+                    <td>Three-compartment PK model for rocuronium. One of the earliest and most widely cited models for rocuronium pharmacokinetics.</td>
+                </tr>
+                <tr>
+                    <td>Szenohradszky</td>
+                    <td>Szenohradszky et al.</td>
+                    <td>Three-compartment model with parameters derived from a study population that characterized rocuronium distribution and elimination kinetics.</td>
+                </tr>
+                <tr>
+                    <td>Cooper</td>
+                    <td>Cooper et al.</td>
+                    <td>PK model incorporating compartmental analysis of rocuronium disposition, providing volume and clearance parameters for simulation.</td>
+                </tr>
+                <tr>
+                    <td>Alvarez-Gomez</td>
+                    <td>Alvarez-Gomez et al.</td>
+                    <td>Three-compartment model derived from clinical pharmacokinetic data, reflecting rocuronium behavior across different patient populations.</td>
+                </tr>
+                <tr>
+                    <td>McCoy</td>
+                    <td>McCoy et al.</td>
+                    <td>PK model characterizing rocuronium pharmacokinetics with emphasis on compartmental volumes and inter-compartmental clearances.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Pharmacodynamic Model</h3>
+        <p>
+            All PK models are paired with the pharmacodynamic model by <strong>Masui et al. (2018)</strong>, published in the Journal of Anesthesia (volume 32, pages 709-716). This PD model relates the effect-site concentration of rocuronium to the Train-of-Four (TOF) ratio using a sigmoid E-max relationship, enabling prediction of the degree of neuromuscular blockade over time.
+        </p>
+
+        <div class="callout callout-tip">
+            <strong>Tip</strong>
+            Different PK models may produce different concentration-time profiles for the same dosing regimen. Comparing results across models can provide insight into the range of predicted responses and model-specific assumptions.
+        </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- 7. UNITS REFERENCE                           -->
+    <!-- ============================================ -->
+    <section id="units">
+        <h2>7. Units Reference</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Measurement</th>
+                    <th>Unit</th>
+                    <th>Context</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Bolus dose</td>
+                    <td>mg</td>
+                    <td>Total bolus amount (not weight-based); range 0 -- 100 mg</td>
+                </tr>
+                <tr>
+                    <td>Continuous infusion rate</td>
+                    <td>&mu;g/kg/min</td>
+                    <td>Weight-based rate per minute; range 0 -- 30 &mu;g/kg/min</td>
+                </tr>
+                <tr>
+                    <td>Plasma concentration (Cp)</td>
+                    <td>&mu;g/mL</td>
+                    <td>Predicted plasma compartment concentration</td>
+                </tr>
+                <tr>
+                    <td>Effect-site concentration (Ce)</td>
+                    <td>&mu;g/mL</td>
+                    <td>Predicted effect-site (biophase) concentration</td>
+                </tr>
+                <tr>
+                    <td>TOF ratio</td>
+                    <td>%</td>
+                    <td>Train-of-Four ratio; 0% = complete block, 100% = full recovery</td>
+                </tr>
+                <tr>
+                    <td>Time</td>
+                    <td>minutes / HH:MM</td>
+                    <td>Elapsed time or clock time from anesthesia start</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- 8. TIPS AND BEST PRACTICES                   -->
+    <!-- ============================================ -->
+    <section id="tips">
+        <h2>8. Tips and Best Practices</h2>
+
+        <h3>Patient Parameters</h3>
+        <ul>
+            <li>Always set patient parameters before defining dose events and running the simulation. PK model calculations depend on weight (and potentially age, sex, and height depending on the selected model).</li>
+            <li>The continuous infusion rate is weight-based (&mu;g/kg/min), so changing the patient weight will affect the total drug delivered per unit time.</li>
+            <li>Use the range sliders for quick adjustment of age, weight, and height values.</li>
+        </ul>
+
+        <h3>Model Selection</h3>
+        <ul>
+            <li>Different PK models were developed from different study populations and may yield varying predictions. Consider the clinical context when selecting a model.</li>
+            <li>The Wierda model is set as the default and is one of the most commonly referenced models for rocuronium PK.</li>
+            <li>Running the same dosing scenario across multiple models can help illustrate the uncertainty inherent in pharmacokinetic predictions.</li>
+        </ul>
+
+        <h3>Dosing Strategy</h3>
+        <ul>
+            <li>A typical intubation dose of rocuronium is 0.6 -- 1.2 mg/kg. For a 70 kg patient, this corresponds to approximately 42 -- 84 mg.</li>
+            <li>Maintenance continuous infusion rates typically range from 5 -- 15 &mu;g/kg/min, adjusted based on the desired level of neuromuscular blockade.</li>
+            <li>To simulate recovery, add a final dose event with both bolus and continuous rate set to 0 at the desired stop time.</li>
+        </ul>
+
+        <h3>Interpreting TOF Ratio</h3>
+        <ul>
+            <li>TOF ratio approaching 0% indicates deep neuromuscular blockade (no twitch response).</li>
+            <li>TOF ratio returning to 90% or above is generally considered adequate recovery from neuromuscular blockade.</li>
+            <li>The relationship between effect-site concentration and TOF ratio follows a sigmoid curve, meaning small changes in concentration near the EC50 produce large changes in TOF ratio.</li>
+        </ul>
+
+        <h3>Offline Use</h3>
+        <ul>
+            <li>After installing as a PWA, the app works fully offline. No network connection is needed during use.</li>
+            <li>CSV export saves files locally to the device.</li>
+        </ul>
+
+        <h3>Screen Orientation</h3>
+        <p>
+            The app is optimized for portrait orientation on mobile devices. Charts and controls are designed for single-hand operation on smartphones.
+        </p>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- 9. TROUBLESHOOTING                           -->
+    <!-- ============================================ -->
+    <section id="troubleshooting">
+        <h2>9. Troubleshooting</h2>
+
+        <h4>The app does not load or shows a blank screen</h4>
+        <p>
+            Ensure you are using a supported browser (Safari on iOS, Chrome or Edge on desktop). Clear the browser cache and reload the page. If using the PWA, try removing and reinstalling the app.
+        </p>
+
+        <h4>The chart does not display after adding dose events</h4>
+        <p>
+            Confirm that you have navigated to the Results tab and that the simulation has been executed. Ensure at least one dose event with a non-zero bolus or continuous rate is defined.
+        </p>
+
+        <h4>Concentration values seem incorrect</h4>
+        <p>
+            Verify that patient parameters (especially weight) are correctly set, as the continuous infusion rate is weight-based. Also check that the correct PK model is selected. Different models will produce different concentration profiles for the same dosing schedule.
+        </p>
+
+        <h4>TOF ratio does not change</h4>
+        <p>
+            If the simulated concentrations are very low (well below the EC50 of the PD model), the TOF ratio may remain near 100%. Conversely, at very high concentrations, the TOF ratio may remain near 0%. Ensure the dosing regimen produces concentrations in the pharmacodynamically active range.
+        </p>
+
+        <h4>CSV export does not work</h4>
+        <p>
+            On iOS, the file download behavior may differ depending on the browser. In Safari, the file may open in a new tab or prompt a save dialog. Try using the Share sheet to save to the Files app.
+        </p>
+
+        <h4>Range sliders are difficult to adjust precisely</h4>
+        <p>
+            On small screens, the range sliders may require careful touch placement. Try tapping the desired position on the slider track rather than dragging, or use the displayed numerical value to confirm the current setting.
+        </p>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- 10. DISCLAIMER                               -->
+    <!-- ============================================ -->
+    <section id="disclaimer-full">
+        <h2>10. Disclaimer and Terms of Use</h2>
+
+        <div class="callout callout-danger">
+            <strong>Important</strong>
+            Please read the following terms carefully before using this application.
+        </div>
+
+        <ul>
+            <li>This application is <strong>for educational and research purposes only</strong>.</li>
+            <li>It must <strong>not</strong> be used as a basis for clinical diagnosis or treatment decisions.</li>
+            <li>All clinical decisions must be made under the responsibility of qualified medical professionals.</li>
+            <li>Calculation results are theoretical values derived from pharmacokinetic and pharmacodynamic models. Individual patient responses may vary significantly from model predictions.</li>
+            <li>The pharmacodynamic model is based on: Masui K, et al. Journal of Anesthesia. 2018;32:709-716.</li>
+            <li>The pharmacokinetic models are based on published literature by Wierda, Szenohradszky, Cooper, Alvarez-Gomez, and McCoy (see Info tab for full references).</li>
+            <li>The developer assumes no liability for any outcomes resulting from the use of this application.</li>
+        </ul>
+
+        <p>
+            By using this application, you acknowledge and accept these terms.
+        </p>
+
+        <img src="images/08_info.png" alt="Info tab showing application version, references, and disclaimer information" class="screenshot">
+        <p class="screenshot-caption">Figure 8: Info tab with version and reference information</p>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- FOOTER                                       -->
+    <!-- ============================================ -->
+    <footer class="manual-footer">
+        <p>Rocuronium PK/PD Simulator V1.1.0 User Manual</p>
+        <p>Developed by YASUYUKI SUZUKI, MD, PhD -- Saiseikai Matsuyama Hospital, Dept. of Anaesthesiology / Ehime University Graduate School of Medicine, Dept. of Pharmacology</p>
+        <p>PD Model: Masui et al. (2018) J Anesth 32:709-716</p>
+        <p style="margin-top: 12px;">For educational and research purposes only.</p>
+    </footer>
+
+</div>
+
+</body>
+</html>

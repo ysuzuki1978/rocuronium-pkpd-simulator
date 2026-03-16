@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rocuronium PK/PD Simulator V1.1.0 取扱説明書</title>
+    <style>
+        /* ============================
+           Base / Reset
+           ============================ */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #222222;
+            --bg-card: #2a2a2a;
+            --bg-code: #333333;
+            --accent: #00BCD4;
+            --accent-dim: #00838f;
+            --text-primary: #e0e0e0;
+            --text-secondary: #aaaaaa;
+            --text-heading: #ffffff;
+            --border: #3a3a3a;
+            --warning-bg: #3a2a00;
+            --warning-border: #d4a000;
+            --warning-text: #ffd54f;
+            --tip-bg: #002a2e;
+            --tip-border: #00838f;
+            --danger-bg: #3a1010;
+            --danger-border: #c62828;
+            --danger-text: #ef9a9a;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            font-size: 16px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            background-color: #121212;
+            color: var(--text-primary);
+            line-height: 1.8;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        /* ============================
+           Layout
+           ============================ */
+        .manual-container {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 0 1.25rem 4rem;
+        }
+
+        /* ============================
+           Header
+           ============================ */
+        .manual-header {
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0d2b30 100%);
+            border-bottom: 2px solid var(--accent);
+            padding: 2.5rem 1.25rem 2rem;
+            margin: 0 -1.25rem 2rem;
+            text-align: center;
+        }
+
+        .manual-header h1 {
+            font-size: 1.6rem;
+            color: var(--accent);
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            margin-bottom: 0.5rem;
+        }
+
+        .manual-header .subtitle {
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        .lang-switch {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: 0.35rem 1rem;
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: border-color 0.2s, color 0.2s;
+        }
+
+        .lang-switch:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* ============================
+           Table of Contents
+           ============================ */
+        .toc {
+            background-color: #1e1e1e;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .toc h2 {
+            font-size: 1.1rem;
+            color: var(--accent);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+            border-left: none;
+            padding-left: 0;
+        }
+
+        .toc ol {
+            list-style: none;
+            counter-reset: toc-counter;
+        }
+
+        .toc > ol > li {
+            counter-increment: toc-counter;
+            margin-bottom: 0.4rem;
+        }
+
+        .toc > ol > li > a::before {
+            content: counter(toc-counter) ". ";
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .toc a {
+            color: #ccc;
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+
+        .toc a:hover {
+            color: var(--accent);
+        }
+
+        .toc ol ol {
+            margin-left: 1.5rem;
+            margin-top: 0.3rem;
+        }
+
+        .toc ol ol li {
+            margin-bottom: 0.25rem;
+        }
+
+        .toc ol ol a {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+        }
+
+        /* ============================
+           Sections
+           ============================ */
+        section {
+            margin-bottom: 3rem;
+        }
+
+        h2 {
+            font-size: 1.35rem;
+            color: var(--accent);
+            border-left: 4px solid var(--accent);
+            padding-left: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        h3 {
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.3rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h4 {
+            font-size: 1rem;
+            color: #b0b0b0;
+            margin-top: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        p {
+            margin-bottom: 0.9rem;
+        }
+
+        /* ============================
+           Screenshots
+           ============================ */
+        .screenshot {
+            display: block;
+            max-width: 300px;
+            width: 100%;
+            margin: 1.25rem auto;
+            border: 1px solid #444;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .screenshot-caption {
+            text-align: center;
+            font-size: 0.82rem;
+            color: #888;
+            margin-top: -0.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        /* ============================
+           Lists
+           ============================ */
+        ul, ol {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        li {
+            margin-bottom: 0.4rem;
+        }
+
+        /* ============================
+           Tables
+           ============================ */
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .param-table th,
+        .param-table td {
+            border: 1px solid #444;
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+        }
+
+        .param-table th {
+            background-color: #1e2a2d;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .param-table td {
+            background-color: var(--bg-primary);
+        }
+
+        /* ============================
+           Callout boxes
+           ============================ */
+        .callout {
+            border-radius: 6px;
+            padding: 1rem 1.25rem;
+            margin: 1.25rem 0;
+            font-size: 0.92rem;
+        }
+
+        .callout-tip {
+            background-color: var(--tip-bg);
+            border-left: 4px solid var(--tip-border);
+        }
+
+        .callout-warning {
+            background-color: var(--warning-bg);
+            border-left: 4px solid var(--warning-border);
+            color: var(--warning-text);
+        }
+
+        .callout-danger {
+            background-color: var(--danger-bg);
+            border-left: 4px solid var(--danger-border);
+            color: var(--danger-text);
+        }
+
+        .callout strong {
+            display: block;
+            margin-bottom: 0.3rem;
+        }
+
+        .callout ul {
+            margin-top: 0.5rem;
+            margin-bottom: 0;
+        }
+
+        /* ============================
+           Code / Keyboard
+           ============================ */
+        code {
+            background-color: var(--bg-code);
+            padding: 0.15em 0.4em;
+            border-radius: 3px;
+            font-size: 0.88em;
+            color: var(--accent);
+            font-family: "SF Mono", "Menlo", monospace;
+        }
+
+        kbd {
+            display: inline-block;
+            background-color: var(--bg-code);
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 0.1em 0.5em;
+            font-size: 0.85em;
+            font-family: inherit;
+            color: var(--text-primary);
+            box-shadow: 0 1px 0 #555;
+        }
+
+        /* ============================
+           Procedure steps
+           ============================ */
+        .procedure {
+            counter-reset: proc-step;
+            list-style: none;
+            margin-left: 0;
+        }
+
+        .procedure > li {
+            counter-increment: proc-step;
+            position: relative;
+            padding-left: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .procedure > li::before {
+            content: counter(proc-step);
+            position: absolute;
+            left: 0;
+            top: 0.1em;
+            width: 1.8rem;
+            height: 1.8rem;
+            background-color: var(--accent);
+            color: #000;
+            font-weight: 700;
+            font-size: 0.85rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        /* ============================
+           Workflow diagram
+           ============================ */
+        .workflow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 1.5rem 0;
+            flex-wrap: wrap;
+        }
+
+        .workflow-step {
+            background-color: #1e1e1e;
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            padding: 0.6rem 1rem;
+            text-align: center;
+            min-width: 100px;
+        }
+
+        .workflow-step .label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .workflow-arrow {
+            color: #555;
+            font-size: 1.2rem;
+        }
+
+        /* ============================
+           Model detail blocks
+           ============================ */
+        .model-block {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .model-block h4 {
+            color: var(--accent);
+            margin-top: 0;
+        }
+
+        /* ============================
+           Footer
+           ============================ */
+        .manual-footer {
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            font-size: 0.82rem;
+            color: #666;
+        }
+
+        .manual-footer p {
+            margin-bottom: 0.3rem;
+        }
+
+        /* ============================
+           Responsive
+           ============================ */
+        @media (max-width: 600px) {
+            .manual-container {
+                padding: 0 1rem 3rem;
+            }
+
+            .manual-header {
+                margin: 0 -1rem 1.5rem;
+                padding: 2rem 1rem 1.5rem;
+            }
+
+            .manual-header h1 {
+                font-size: 1.3rem;
+            }
+
+            h2 {
+                font-size: 1.15rem;
+            }
+
+            .toc {
+                padding: 1rem 1.25rem;
+            }
+
+            .param-table {
+                font-size: 0.82rem;
+            }
+
+            .param-table th,
+            .param-table td {
+                padding: 0.4rem 0.5rem;
+            }
+
+            .screenshot {
+                max-width: 260px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="manual-container">
+
+    <!-- ========================================
+         Header
+         ======================================== -->
+    <header class="manual-header">
+        <h1>Rocuronium PK/PD Simulator V1.1.0<br>取扱説明書</h1>
+        <p class="subtitle">ロクロニウム薬物動態/薬力学シミュレータ</p>
+        <a href="manual_en.html" class="lang-switch">English</a>
+    </header>
+
+    <!-- ========================================
+         Table of Contents
+         ======================================== -->
+    <nav class="toc">
+        <h2>目次</h2>
+        <ol>
+            <li><a href="#overview">概要</a></li>
+            <li><a href="#getting-started">はじめに</a>
+                <ol>
+                    <li><a href="#install">インストールと起動</a></li>
+                    <li><a href="#disclaimer">免責事項の確認</a></li>
+                    <li><a href="#patient">患者情報の設定</a></li>
+                </ol>
+            </li>
+            <li><a href="#dosing">投与スケジュール</a>
+                <ol>
+                    <li><a href="#dose-add">投与イベントの追加</a></li>
+                    <li><a href="#dose-params">投与パラメータ</a></li>
+                    <li><a href="#dose-stop">投与の停止</a></li>
+                </ol>
+            </li>
+            <li><a href="#results">シミュレーション結果</a>
+                <ol>
+                    <li><a href="#results-summary">サマリーカード</a></li>
+                    <li><a href="#results-chart">濃度チャート</a></li>
+                    <li><a href="#results-table">データテーブル</a></li>
+                </ol>
+            </li>
+            <li><a href="#csv-export">CSVエクスポート</a></li>
+            <li><a href="#pk-pd-models">PK/PDモデルリファレンス</a>
+                <ol>
+                    <li><a href="#model-wierda">Wierda モデル</a></li>
+                    <li><a href="#model-szeno">Szenohradszky モデル</a></li>
+                    <li><a href="#model-cooper">Cooper モデル</a></li>
+                    <li><a href="#model-alvarez">Alvarez-Gomez モデル</a></li>
+                    <li><a href="#model-mccoy">McCoy モデル</a></li>
+                </ol>
+            </li>
+            <li><a href="#units">単位一覧</a></li>
+            <li><a href="#tips">使い方のヒント</a></li>
+            <li><a href="#troubleshooting">トラブルシューティング</a></li>
+            <li><a href="#legal">免責事項・利用規約</a></li>
+        </ol>
+    </nav>
+
+    <!-- ========================================
+         1. 概要
+         ======================================== -->
+    <section id="overview">
+        <h2>1. 概要</h2>
+        <p>
+            Rocuronium PK/PD Simulator は、非脱分極性筋弛緩薬ロクロニウムの薬物動態（PK）および薬力学（PD）をシミュレーションする教育・研究用 Web アプリケーションです。
+            ボーラス投与および持続投与後の血漿中濃度、効果部位濃度、ならびに TOF 比（Train-of-Four ratio）の経時変化を予測します。
+        </p>
+
+        <p>本アプリケーションは 4 つのタブで構成されています。</p>
+
+        <div class="workflow-diagram">
+            <div class="workflow-step">
+                <span class="label">Patient</span>
+            </div>
+            <span class="workflow-arrow">&#9654;</span>
+            <div class="workflow-step">
+                <span class="label">Dosing</span>
+            </div>
+            <span class="workflow-arrow">&#9654;</span>
+            <div class="workflow-step">
+                <span class="label">Results</span>
+            </div>
+            <span class="workflow-arrow">&#9654;</span>
+            <div class="workflow-step">
+                <span class="label">Info</span>
+            </div>
+        </div>
+
+        <table class="param-table">
+            <thead>
+                <tr>
+                    <th>タブ</th>
+                    <th>機能</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Patient</td>
+                    <td>患者情報（年齢・体重・身長・性別）の表示・編集、PK/PD モデルの選択、麻酔開始時刻の設定</td>
+                </tr>
+                <tr>
+                    <td>Dosing</td>
+                    <td>投与イベント（ボーラス・持続投与）の追加・編集・削除、シミュレーション実行</td>
+                </tr>
+                <tr>
+                    <td>Results</td>
+                    <td>血漿中濃度・効果部位濃度・TOF 比のチャートおよびデータテーブルの表示、CSV エクスポート</td>
+                </tr>
+                <tr>
+                    <td>Info</td>
+                    <td>アプリケーション情報、PK/PD モデルの詳細、開発者情報、免責事項</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>主な特徴</h3>
+        <ul>
+            <li>5 種類の PK モデル（Wierda, Szenohradszky, Cooper, Alvarez-Gomez, McCoy）に対応</li>
+            <li>Masui et al. (2018) の PD モデルによる TOF 比予測</li>
+            <li>Enhanced RK4 Integration による高精度数値計算（V1.1.0）</li>
+            <li>複数の投与イベント（ボーラス・持続投与の変更）に対応</li>
+            <li>血漿中濃度・効果部位濃度と TOF 比の同時表示チャート</li>
+            <li>CSV 形式でのデータエクスポート</li>
+            <li>PWA（Progressive Web App）対応 -- オフラインで使用可能</li>
+            <li>iPhone に最適化されたダークテーマ UI</li>
+        </ul>
+    </section>
+
+    <!-- ========================================
+         2. はじめに
+         ======================================== -->
+    <section id="getting-started">
+        <h2>2. はじめに</h2>
+
+        <h3 id="install">2.1 インストールと起動</h3>
+
+        <h4>ブラウザで直接使用する場合</h4>
+        <p>Safari または Chrome でアプリケーションの URL にアクセスしてください。インターネット接続がある環境であれば、インストール不要で使用できます。</p>
+
+        <h4>iPhone のホーム画面に追加する場合（推奨）</h4>
+        <ol class="procedure">
+            <li>Safari でアプリケーションの URL を開く</li>
+            <li>画面下部の共有ボタン（四角から上矢印のアイコン）をタップ</li>
+            <li>「ホーム画面に追加」を選択</li>
+            <li>名前を確認して「追加」をタップ</li>
+        </ol>
+        <p>ホーム画面に追加すると、通常のアプリと同様にフルスクリーンで起動し、オフラインでも使用できます。</p>
+
+        <h3 id="disclaimer">2.2 免責事項の確認</h3>
+        <p>アプリケーションを起動すると、最初に免責事項のモーダルが表示されます。内容を確認し、<kbd>Accept and Start</kbd> をタップして開始してください。</p>
+
+        <img src="images/01_disclaimer.png" alt="免責事項モーダル" class="screenshot">
+        <p class="screenshot-caption">図1: 起動時の免責事項確認画面</p>
+
+        <div class="callout callout-danger">
+            <strong>重要</strong>
+            本アプリケーションは教育・研究目的専用です。臨床診断や治療の根拠として使用しないでください。すべての臨床判断は、資格を有する医療専門家の責任のもとで行ってください。
+        </div>
+
+        <h3 id="patient">2.3 患者情報の設定</h3>
+        <p>Patient タブでは、現在設定されている患者情報がカード形式で表示されます。<kbd>Edit</kbd> ボタンをタップすると、患者情報の編集モーダルが開きます。</p>
+
+        <img src="images/02_patient.png" alt="Patient タブ" class="screenshot">
+        <p class="screenshot-caption">図2: Patient タブ -- 患者情報の表示</p>
+
+        <img src="images/03_patient_edit.png" alt="患者情報編集モーダル" class="screenshot">
+        <p class="screenshot-caption">図3: 患者情報編集モーダル</p>
+
+        <table class="param-table">
+            <thead>
+                <tr>
+                    <th>項目</th>
+                    <th>既定値</th>
+                    <th>範囲</th>
+                    <th>説明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Patient ID</td>
+                    <td>Patient-YYYY-MM-DD</td>
+                    <td>任意の文字列</td>
+                    <td>患者識別子（任意設定）</td>
+                </tr>
+                <tr>
+                    <td>Age（年齢）</td>
+                    <td>50</td>
+                    <td>18 -- 100</td>
+                    <td>PK パラメータの計算に使用</td>
+                </tr>
+                <tr>
+                    <td>Weight（体重, kg）</td>
+                    <td>70.0</td>
+                    <td>30 -- 200</td>
+                    <td>分布容積・クリアランスの計算に使用</td>
+                </tr>
+                <tr>
+                    <td>Height（身長, cm）</td>
+                    <td>170</td>
+                    <td>120 -- 220</td>
+                    <td>BMI の計算に使用</td>
+                </tr>
+                <tr>
+                    <td>Sex（性別）</td>
+                    <td>Male</td>
+                    <td>Male / Female</td>
+                    <td>PK パラメータの計算に使用</td>
+                </tr>
+                <tr>
+                    <td>PK/PD Model</td>
+                    <td>Wierda</td>
+                    <td>5 モデルから選択</td>
+                    <td>使用する薬物動態モデルの選択</td>
+                </tr>
+                <tr>
+                    <td>Anesthesia Start Time</td>
+                    <td>08:00</td>
+                    <td>--</td>
+                    <td>麻酔開始時刻（投与タイミングの基準）</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="callout callout-tip">
+            <strong>補足</strong>
+            BMI は身長と体重から自動計算されます。各パラメータはレンジスライダーで直感的に調整できます。スライダーを動かすと現在の値がリアルタイムで表示されます。患者情報の変更後は <kbd>Save</kbd> ボタンで保存してください。PK/PD モデルの選択はシミュレーション結果に大きく影響するため、目的に応じて適切なモデルを選択してください。
+        </div>
+
+        <p>患者情報の設定が完了したら、<kbd>Go to Dosing Schedule</kbd> ボタンをタップして Dosing タブに移動します。</p>
+    </section>
+
+    <!-- ========================================
+         3. 投与スケジュール
+         ======================================== -->
+    <section id="dosing">
+        <h2>3. 投与スケジュール</h2>
+        <p>
+            Dosing タブでは、ロクロニウムの投与スケジュールを設定します。ボーラス投与と持続投与を組み合わせた複数の投与イベントを時系列で追加できます。
+        </p>
+
+        <img src="images/04_dosing.png" alt="Dosing タブ" class="screenshot">
+        <p class="screenshot-caption">図4: Dosing タブ -- 投与スケジュール画面</p>
+
+        <h3 id="dose-add">3.1 投与イベントの追加</h3>
+        <ol class="procedure">
+            <li><kbd>+ Add Dose Event</kbd> ボタンをタップする</li>
+            <li>投与イベント追加モーダルが表示される</li>
+            <li>投与時刻（Dose Time）を設定する（麻酔開始時刻が基準として表示される）</li>
+            <li>ボーラス投与量（mg）をレンジスライダーで設定する</li>
+            <li>持続投与速度（ug/kg/min）をレンジスライダーで設定する</li>
+            <li><kbd>Add</kbd> ボタンで確定する</li>
+        </ol>
+
+        <img src="images/05_dose_event.png" alt="投与イベント追加モーダル" class="screenshot">
+        <p class="screenshot-caption">図5: 投与イベント追加モーダル</p>
+
+        <h3 id="dose-params">3.2 投与パラメータ</h3>
+        <table class="param-table">
+            <thead>
+                <tr>
+                    <th>パラメータ</th>
+                    <th>範囲</th>
+                    <th>単位</th>
+                    <th>説明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Dose Time</td>
+                    <td>--</td>
+                    <td>時刻</td>
+                    <td>投与を行う時刻。麻酔開始時刻以降の時刻を指定する</td>
+                </tr>
+                <tr>
+                    <td>Bolus Dose</td>
+                    <td>0 -- 100</td>
+                    <td>mg</td>
+                    <td>ボーラス投与量。レンジスライダーで 1 mg 刻みで調整</td>
+                </tr>
+                <tr>
+                    <td>Continuous Infusion</td>
+                    <td>0 -- 30</td>
+                    <td>ug/kg/min</td>
+                    <td>持続投与速度。レンジスライダーで 0.1 ug/kg/min 刻みで調整</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="callout callout-tip">
+            <strong>投与量の目安</strong>
+            ロクロニウムの一般的な挿管用量は 0.6 -- 1.2 mg/kg です。体重 70 kg の患者では 42 -- 84 mg に相当します。持続投与の場合は一般的に 7 -- 12 ug/kg/min 程度です。ただし、これらは参考値であり、実際の投与量は臨床状況に応じて医療専門家が判断してください。
+        </div>
+
+        <h3 id="dose-stop">3.3 投与の停止</h3>
+        <p>
+            投与を停止する場合は、停止時刻に新しい投与イベントを追加し、ボーラスと持続投与の両方を 0 に設定します。
+            これにより、その時刻以降の持続投与が停止され、薬物の消失過程（ウォッシュアウト）がシミュレーションされます。
+        </p>
+
+        <p>既存のイベントを削除するには、各イベント右側の削除ボタンをタップします。</p>
+
+        <p>投与スケジュールの設定が完了したら、<kbd>Run Simulation</kbd> ボタンをタップしてシミュレーションを実行します。投与イベントが 1 つ以上追加されるまで、このボタンは無効化されています。</p>
+    </section>
+
+    <!-- ========================================
+         4. シミュレーション結果
+         ======================================== -->
+    <section id="results">
+        <h2>4. シミュレーション結果</h2>
+        <p>
+            Dosing タブで <kbd>Run Simulation</kbd> を実行すると、Results タブにシミュレーション結果が表示されます。
+            結果画面は、サマリーカード、濃度チャート、データテーブルの 3 つの要素で構成されています。
+        </p>
+
+        <img src="images/06_results.png" alt="Results タブ（チャート）" class="screenshot">
+        <p class="screenshot-caption">図6: Results タブ -- シミュレーション結果のチャート表示</p>
+
+        <h3 id="results-summary">4.1 サマリーカード</h3>
+        <p>画面上部に表示されるサマリーカードでは、シミュレーション結果の主要指標を確認できます。</p>
+
+        <table class="param-table">
+            <thead>
+                <tr>
+                    <th>指標</th>
+                    <th>単位</th>
+                    <th>説明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Peak Plasma Concentration</td>
+                    <td>ug/mL</td>
+                    <td>シミュレーション期間中の血漿中濃度の最大値</td>
+                </tr>
+                <tr>
+                    <td>Peak Effect-Site Concentration</td>
+                    <td>ug/mL</td>
+                    <td>シミュレーション期間中の効果部位濃度の最大値</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 id="results-chart">4.2 濃度チャート</h3>
+        <p>
+            チャートは 2 軸構成で表示されます。左側の Y 軸は血漿中濃度および効果部位濃度（ug/mL）、右側の Y 軸は TOF 比（%）を示します。
+            X 軸は麻酔開始時刻からの経過時間です。
+        </p>
+
+        <table class="param-table">
+            <thead>
+                <tr>
+                    <th>線の色</th>
+                    <th>パラメータ</th>
+                    <th>Y 軸</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>青色</td>
+                    <td>血漿中濃度（Plasma Concentration）</td>
+                    <td>左軸（ug/mL）</td>
+                </tr>
+                <tr>
+                    <td>緑色</td>
+                    <td>効果部位濃度（Effect-Site Concentration）</td>
+                    <td>左軸（ug/mL）</td>
+                </tr>
+                <tr>
+                    <td>赤色</td>
+                    <td>TOF 比（Train-of-Four Ratio）</td>
+                    <td>右軸（%）</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="callout callout-tip">
+            <strong>TOF 比の解釈</strong>
+            TOF 比は神経筋遮断の程度を示す指標です。TOF 比 100% は完全な神経筋伝達を意味し、0% は完全遮断を意味します。一般的に、挿管条件として TOF 比 0 -- 5% が推奨され、抜管の基準として TOF 比 90% 以上が推奨されています。
+        </div>
+
+        <h3 id="results-table">4.3 データテーブル</h3>
+        <p>チャートの下に表示されるデータテーブルでは、各時点の詳細な数値を確認できます。</p>
+
+        <img src="images/07_results_table.png" alt="結果テーブル" class="screenshot">
+        <p class="screenshot-caption">図7: Results タブ -- データテーブル表示</p>
+
+        <table class="param-table">
+            <thead>
+                <tr>
+                    <th>列名</th>
+                    <th>単位</th>
+                    <th>説明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Time</td>
+                    <td>分（実時刻）</td>
+                    <td>麻酔開始からの経過時間（対応する実時刻も表示）</td>
+                </tr>
+                <tr>
+                    <td>Plasma Concentration</td>
+                    <td>ug/mL</td>
+                    <td>血漿中濃度</td>
+                </tr>
+                <tr>
+                    <td>Effect-Site Concentration</td>
+                    <td>ug/mL</td>
+                    <td>効果部位濃度</td>
+                </tr>
+                <tr>
+                    <td>TOF Ratio</td>
+                    <td>%</td>
+                    <td>Train-of-Four 比</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- ========================================
+         5. CSVエクスポート
+         ======================================== -->
+    <section id="csv-export">
+        <h2>5. CSV エクスポート</h2>
+        <p>
+            Results タブの <kbd>Export CSV Data</kbd> ボタンをタップすると、シミュレーション結果を CSV 形式でダウンロードできます。
+        </p>
+
+        <p>エクスポートされる CSV ファイルには以下の列が含まれます。</p>
+        <ul>
+            <li>経過時間（分）</li>
+            <li>実時刻</li>
+            <li>血漿中濃度（ug/mL）</li>
+            <li>効果部位濃度（ug/mL）</li>
+            <li>TOF 比（%）</li>
+        </ul>
+
+        <div class="callout callout-tip">
+            <strong>活用方法</strong>
+            CSV ファイルは Microsoft Excel、Google Sheets、R、Python 等の表計算ソフトやデータ解析ツールで開くことができます。研究データの記録や二次解析に活用してください。
+        </div>
+    </section>
+
+    <!-- ========================================
+         6. PK/PDモデルリファレンス
+         ======================================== -->
+    <section id="pk-pd-models">
+        <h2>6. PK/PD モデルリファレンス</h2>
+        <p>
+            本アプリケーションでは、5 種類の薬物動態（PK）モデルを選択できます。各 PK モデルに対応する薬力学（PD）パラメータは、
+            Masui et al. (2018) の研究で検証されたものを使用しています。
+        </p>
+
+        <div class="callout callout-tip">
+            <strong>参考文献（PD モデル）</strong>
+            Masui K, Ishigaki S, Tomita A, et al. Pharmacodynamics of rocuronium evaluated by the train-of-four ratio and simple twitch height.
+            <em>J Anesth</em>. 2018;32:709-716. doi:10.1007/s00540-018-2543-3
+        </div>
+
+        <h3 id="model-wierda">6.1 Wierda モデル (1991)</h3>
+        <div class="model-block">
+            <h4>Wierda et al. (1991)</h4>
+            <p><strong>構造:</strong> 3 コンパートメントモデル</p>
+            <p><strong>特徴:</strong> 初期に開発された基本的な 3 コンパートメントモデルの一つ。多くの後続研究で比較基準として使用されています。</p>
+            <p><strong>臨床的意義:</strong> 標準的な患者におけるロクロニウムの動態を理解するためのベンチマークモデルです。Cooper モデルや Alvarez-Gomez モデルと類似した血漿中濃度プロファイルを示します。</p>
+        </div>
+
+        <h3 id="model-szeno">6.2 Szenohradszky モデル (1992)</h3>
+        <div class="model-block">
+            <h4>Szenohradszky et al. (1992)</h4>
+            <p><strong>構造:</strong> 3 コンパートメントモデル</p>
+            <p><strong>特徴:</strong> 正常腎機能患者と腎移植患者のデータから構築されたモデル。他のモデルと比較して初期血漿中濃度を高く計算する傾向があります。</p>
+            <p><strong>臨床的意義:</strong> 文献によれば血漿中濃度を過大評価する可能性があります。その結果、効果部位濃度も高く計算され、他のモデルよりも TOF 比の回復を早く予測する場合があります。</p>
+        </div>
+
+        <h3 id="model-cooper">6.3 Cooper モデル (1993)</h3>
+        <div class="model-block">
+            <h4>Cooper et al. (1993)</h4>
+            <p><strong>構造:</strong> 3 コンパートメントモデル</p>
+            <p><strong>特徴:</strong> 腎機能の影響を比較する研究から得られたモデル。Wierda モデルと比較的類似した動態を示します。</p>
+            <p><strong>臨床的意義:</strong> 腎機能障害患者を念頭に開発された汎用モデルとして、Wierda や Alvarez-Gomez と並んで参照されます。</p>
+        </div>
+
+        <h3 id="model-alvarez">6.4 Alvarez-Gomez モデル (1994)</h3>
+        <div class="model-block">
+            <h4>Alvarez-Gomez et al. (1994)</h4>
+            <p><strong>構造:</strong> 3 コンパートメントモデル</p>
+            <p><strong>特徴:</strong> 成人患者を対象としたモデル。本比較研究では Wierda および Cooper と非常に類似したシミュレーション結果を示します。</p>
+            <p><strong>臨床的意義:</strong> 標準モデルの一つとして広く受け入れられており、複数の研究で妥当性が検証されています。</p>
+        </div>
+
+        <h3 id="model-mccoy">6.5 McCoy モデル (1996)</h3>
+        <div class="model-block">
+            <h4>McCoy et al. (1996)</h4>
+            <p><strong>構造:</strong> 2 コンパートメントモデル</p>
+            <p><strong>特徴:</strong> 選択肢の中で唯一の 2 コンパートメントモデル。PD パラメータ（ke0）は年齢の影響を受けません。</p>
+            <p><strong>臨床的意義:</strong> モデル構造が単純であるため計算が容易ですが、特に投与後 30 分以内の分布相の表現において 3 コンパートメントモデルと異なる場合があります。他のモデルよりも高い効果部位濃度を計算する傾向があります。</p>
+        </div>
+
+        <div class="callout callout-warning">
+            <strong>モデル選択に関する注意</strong>
+            各 PK モデルは異なる患者集団や研究条件に基づいて構築されています。モデルの選択によってシミュレーション結果が異なるため、結果の解釈には注意が必要です。研究や学習の目的に応じて適切なモデルを選択してください。
+        </div>
+    </section>
+
+    <!-- ========================================
+         7. 単位一覧
+         ======================================== -->
+    <section id="units">
+        <h2>7. 単位一覧</h2>
+
+        <table class="param-table">
+            <thead>
+                <tr>
+                    <th>項目</th>
+                    <th>単位</th>
+                    <th>備考</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>ボーラス投与量</td>
+                    <td>mg</td>
+                    <td>0 -- 100 mg、1 mg 刻み</td>
+                </tr>
+                <tr>
+                    <td>持続投与速度</td>
+                    <td>ug/kg/min</td>
+                    <td>0 -- 30 ug/kg/min、0.1 刻み</td>
+                </tr>
+                <tr>
+                    <td>血漿中濃度（Cp）</td>
+                    <td>ug/mL</td>
+                    <td>--</td>
+                </tr>
+                <tr>
+                    <td>効果部位濃度（Ce）</td>
+                    <td>ug/mL</td>
+                    <td>--</td>
+                </tr>
+                <tr>
+                    <td>TOF 比</td>
+                    <td>%</td>
+                    <td>0 -- 100%</td>
+                </tr>
+                <tr>
+                    <td>体重</td>
+                    <td>kg</td>
+                    <td>30 -- 200 kg</td>
+                </tr>
+                <tr>
+                    <td>身長</td>
+                    <td>cm</td>
+                    <td>120 -- 220 cm</td>
+                </tr>
+                <tr>
+                    <td>年齢</td>
+                    <td>歳</td>
+                    <td>18 -- 100 歳</td>
+                </tr>
+                <tr>
+                    <td>BMI</td>
+                    <td>kg/m<sup>2</sup></td>
+                    <td>自動計算</td>
+                </tr>
+                <tr>
+                    <td>シミュレーション時間</td>
+                    <td>分</td>
+                    <td>経過時間と実時刻の両方で表示</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- ========================================
+         8. 使い方のヒント
+         ======================================== -->
+    <section id="tips">
+        <h2>8. 使い方のヒント</h2>
+
+        <h3>基本的なワークフロー</h3>
+        <ul>
+            <li>Patient タブで患者情報と PK/PD モデルを設定してから、Dosing タブで投与スケジュールを入力してください</li>
+            <li>患者情報を変更した場合は、Dosing タブで再度 <kbd>Run Simulation</kbd> を実行してシミュレーション結果を更新してください</li>
+            <li>複数のモデルで結果を比較する場合は、Patient タブでモデルを切り替えてシミュレーションを再実行してください</li>
+        </ul>
+
+        <h3>投与スケジュールの設定</h3>
+        <ul>
+            <li>レンジスライダーを動かすと、現在の値がラベルにリアルタイムで表示されます</li>
+            <li>複数の投与イベントを追加することで、ボーラス追加投与や持続投与速度の変更をシミュレーションできます</li>
+            <li>投与を停止する場合は、停止時刻のイベントでボーラスと持続投与を両方 0 に設定してください</li>
+            <li>投与イベントは時系列順に自動的にソートされます</li>
+        </ul>
+
+        <h3>結果の解釈</h3>
+        <ul>
+            <li>血漿中濃度（Cp）はボーラス投与直後に急上昇し、その後分布により低下します</li>
+            <li>効果部位濃度（Ce）は Cp に遅れて上昇し、緩やかなピークを形成します</li>
+            <li>TOF 比は Ce の上昇に伴い低下し、筋弛緩の程度を反映します</li>
+            <li>持続投与を停止した後の薬物消失過程と TOF 比の回復を観察できます</li>
+        </ul>
+
+        <h3>PWA としての使用</h3>
+        <ul>
+            <li>iPhone の Safari でホーム画面に追加すると、オフライン環境でもアプリが動作します</li>
+            <li>フルスクリーンモードで表示されるため、ブラウザの UI による画面の圧迫がありません</li>
+            <li>すべての計算はブラウザ内でローカルに実行されます。データの外部送信は一切ありません</li>
+        </ul>
+    </section>
+
+    <!-- ========================================
+         9. トラブルシューティング
+         ======================================== -->
+    <section id="troubleshooting">
+        <h2>9. トラブルシューティング</h2>
+
+        <h3>アプリが起動しない</h3>
+        <ul>
+            <li>ブラウザのキャッシュをクリアして再読み込みしてください</li>
+            <li>Safari または Chrome の最新バージョンを使用してください</li>
+            <li>PWA として追加している場合は、一度削除してホーム画面に再追加してください</li>
+        </ul>
+
+        <h3>Run Simulation ボタンが押せない</h3>
+        <ul>
+            <li>投与イベントが 1 つ以上追加されている必要があります。Dosing タブで <kbd>+ Add Dose Event</kbd> から投与イベントを追加してください</li>
+        </ul>
+
+        <h3>チャートが表示されない</h3>
+        <ul>
+            <li>オフライン環境で初めて使用する場合、Chart.js ライブラリがキャッシュされていない可能性があります。一度オンラインでアプリを開いてからオフラインで使用してください</li>
+            <li>画面を縦向きにして表示を確認してください</li>
+        </ul>
+
+        <h3>シミュレーション結果が予想と異なる</h3>
+        <ul>
+            <li>Patient タブで正しい患者情報（体重、年齢等）が設定されているか確認してください。持続投与速度は ug/kg/min のため体重が計算に影響します</li>
+            <li>PK/PD モデルの選択を確認してください。モデルによって結果が異なります</li>
+            <li>投与イベントの時刻が正しい順序で設定されているか確認してください</li>
+            <li>Szenohradszky モデルは他のモデルより高い初期血漿中濃度を算出する傾向があります</li>
+        </ul>
+
+        <h3>CSV ファイルが文字化けする</h3>
+        <ul>
+            <li>CSV ファイルは UTF-8 エンコーディングで出力されます。Excel で開く場合は「データ」タブの「テキストファイルの取り込み」機能を使い、文字コードに UTF-8 を指定してください</li>
+        </ul>
+    </section>
+
+    <!-- ========================================
+         10. 免責事項・利用規約
+         ======================================== -->
+    <section id="legal">
+        <h2>10. 免責事項・利用規約</h2>
+
+        <div class="callout callout-danger">
+            <strong>重要な注意事項</strong>
+            <ul>
+                <li>本アプリケーションは<strong>教育および研究目的</strong>でのみ使用してください</li>
+                <li>本ソフトウェアは医療機器ではありません</li>
+                <li>臨床診断、治療、患者ケアの根拠として使用しないでください</li>
+                <li>すべての臨床判断は、資格を有する医療専門家の責任のもとで行ってください</li>
+                <li>計算結果は薬物動態モデルに基づく理論値であり、実際の臨床における患者反応を保証するものではありません</li>
+                <li>本アプリケーションの使用により生じたいかなる損害についても、開発者は一切の責任を負いません</li>
+            </ul>
+        </div>
+
+        <h3>PK/PD モデルの限界</h3>
+        <p>
+            本アプリケーションで使用される薬物動態/薬力学モデルは、特定の患者集団のデータに基づいて構築されています。
+            モデルの予測精度は、患者の個体差、病態、併用薬、その他の臨床的要因によって影響を受けます。
+            シミュレーション結果は理論的な参考値として解釈してください。
+        </p>
+
+        <h3>データとプライバシー</h3>
+        <p>
+            本アプリケーションは、ユーザーが入力したデータの収集、保存、送信を一切行いません。
+            すべての計算はブラウザ内でローカルに実行されます。
+        </p>
+
+        <h3>参考文献</h3>
+        <ul>
+            <li>Masui K, Ishigaki S, Tomita A, et al. Pharmacodynamics of rocuronium evaluated by the train-of-four ratio and simple twitch height. <em>J Anesth</em>. 2018;32:709-716.</li>
+            <li>Wierda JM, et al. (1991) -- Rocuronium PK model</li>
+            <li>Szenohradszky J, et al. (1992) -- Rocuronium PK model</li>
+            <li>Cooper RA, et al. (1993) -- Rocuronium PK model</li>
+            <li>Alvarez-Gomez JA, et al. (1994) -- Rocuronium PK model</li>
+            <li>McCoy EP, et al. (1996) -- Rocuronium PK model</li>
+        </ul>
+    </section>
+
+    <!-- ========================================
+         Info Tab Reference
+         ======================================== -->
+    <section>
+        <h3>Info タブについて</h3>
+        <p>
+            アプリケーション内の Info タブでは、バージョン情報（V1.1.0 Enhanced RK4 Integration）、使用制限事項、科学的根拠、
+            計算モデルの詳細、開発者情報、プライバシーポリシーを確認できます。
+        </p>
+
+        <img src="images/08_info.png" alt="Info タブ" class="screenshot">
+        <p class="screenshot-caption">図8: Info タブ -- アプリケーション情報</p>
+    </section>
+
+    <!-- ========================================
+         Footer
+         ======================================== -->
+    <footer class="manual-footer">
+        <p>Rocuronium PK/PD Simulator V1.1.0 取扱説明書</p>
+        <p>開発: 鈴木 康之 (YASUYUKI SUZUKI), MD, PhD</p>
+        <p>済生会松山病院 麻酔科 / 愛媛大学大学院医学系研究科 薬理学講座</p>
+        <p>教育・研究目的専用 -- 臨床使用不可</p>
+        <p>Based on Masui et al. (2018) J Anesth PK/PD models</p>
+    </footer>
+
+</div><!-- /manual-container -->
+
+</body>
+</html>
