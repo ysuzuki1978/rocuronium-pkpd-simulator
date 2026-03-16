@@ -9,10 +9,10 @@
     <title>Rocuronium PK/PD Simulator</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0d6efd">
+    <meta name="theme-color" content="#1a1a1a">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -20,8 +20,7 @@
     <div id="disclaimerModal" class="modal active">
         <div class="modal-content">
             <div class="disclaimer-header">
-                <div class="warning-icon">⚠️</div>
-                <h2>Disclaimer</h2>
+                <h2 style="color: #FFC107;">Disclaimer</h2>
             </div>
             <div class="disclaimer-text">
                 <p>This application is an educational and research tool that provides simulation results based on pharmacokinetic models.</p>
@@ -38,19 +37,15 @@
         <!-- Navigation Tabs -->
         <nav class="tab-nav">
             <button class="tab-btn active" data-tab="patient">
-                <span class="tab-icon">👤</span>
                 <span class="tab-text">Patient</span>
             </button>
             <button class="tab-btn" data-tab="dose">
-                <span class="tab-icon">💊</span>
                 <span class="tab-text">Dosing</span>
             </button>
             <button class="tab-btn" data-tab="results">
-                <span class="tab-icon">📊</span>
                 <span class="tab-text">Results</span>
             </button>
             <button class="tab-btn" data-tab="info">
-                <span class="tab-icon">ℹ️</span>
                 <span class="tab-text">Info</span>
             </button>
         </nav>
@@ -125,10 +120,10 @@
 
                 <div class="actions">
                     <button id="addDoseEventBtn" class="secondary-btn">
-                        ➕ Add Dose Event
+                        + Add Dose Event
                     </button>
                     <button id="runSimulationBtn" class="primary-btn" disabled>
-                        ▶️ Run Simulation
+                        Run Simulation
                     </button>
                 </div>
             </section>
@@ -136,7 +131,7 @@
             <!-- Results Tab -->
             <section id="resultsTab" class="tab-panel">
                 <div id="noResults" class="no-results">
-                    <div class="empty-icon">📊</div>
+                    <div class="empty-icon" style="color: var(--text-muted);">—</div>
                     <h2>No Simulation Results</h2>
                     <p>Please run a simulation from the Dosing tab</p>
                     <button id="toDoseTabBtn" class="primary-btn">Go to Dosing</button>
@@ -182,7 +177,7 @@
                     </div>
 
                     <button id="exportCsvBtn" class="primary-btn">
-                        📤 Export CSV Data
+                        Export CSV Data
                     </button>
                 </div>
             </section>
@@ -191,7 +186,6 @@
             <section id="infoTab" class="tab-panel">
                 <div class="info-content">
                     <div class="header">
-                        <div class="app-icon">💉</div>
                         <h1>Rocuronium PK/PD Simulator</h1>
                         <p class="version">Version 1.1.0</p>
                         <p class="rk4-badge">Enhanced RK4 Integration</p>
@@ -199,8 +193,7 @@
 
                     <div class="card warning-card">
                         <div class="card-header">
-                            <span class="warning-icon">⚠️</span>
-                            <h3>Important Usage Limitations</h3>
+                            <h3 style="color: #FFC107;">Important Usage Limitations</h3>
                         </div>
                         <div class="card-content">
                             <p>This software is intended for educational and research purposes only.</p>
@@ -214,7 +207,6 @@
 
                     <div class="card reference-card">
                         <div class="card-header">
-                            <span class="reference-icon">📄</span>
                             <h3>Scientific Evidence</h3>
                         </div>
                         <div class="card-content">
@@ -230,7 +222,6 @@
 
                     <div class="card technical-card">
                         <div class="card-header">
-                            <span class="technical-icon">⚡</span>
                             <h3>Enhanced RK4 Integration (V1.1.0)</h3>
                         </div>
                         <div class="card-content">
@@ -258,7 +249,6 @@
                     
                     <div class="card developer-card">
                         <div class="card-header">
-                            <span class="developer-icon">👨‍💻</span>
                             <h3>Developer Information</h3>
                         </div>
                         <div class="card-content">
@@ -276,7 +266,6 @@
                     
                     <div class="card calculation-card">
                         <div class="card-header">
-                            <span class="calculation-icon">🧮</span>
                             <h3>Calculation Model Details</h3>
                         </div>
                         <div class="card-content">
@@ -316,7 +305,6 @@
 
                     <div class="card privacy-card">
                         <div class="card-header">
-                            <span class="privacy-icon">🔒</span>
                             <h3>Data and Privacy</h3>
                         </div>
                         <div class="card-content">

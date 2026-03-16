@@ -297,7 +297,7 @@ function createDoseEventElement(event, index) {
     
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'delete-dose';
-    deleteBtn.innerHTML = '🗑️';
+    deleteBtn.innerHTML = '×';
     deleteBtn.onclick = () => removeDoseEvent(index);
     
     div.append(infoDiv, deleteBtn);
@@ -307,7 +307,7 @@ function createDoseEventElement(event, index) {
 function updateSimulationButtonState() {
     const button = document.getElementById('runSimulationBtn');
     button.disabled = appState.doseEvents.length === 0 || appState.isCalculating;
-    button.innerHTML = appState.isCalculating ? '<span class="loading"><span class="spinner"></span>Calculating...</span>' : '▶️ Run Simulation';
+    button.innerHTML = appState.isCalculating ? '<span class="loading"><span class="spinner"></span>Calculating...</span>' : 'Run Simulation';
 }
 
 // --- Simulation & Results ---
@@ -392,22 +392,25 @@ function updateChart() {
                 {
                     label: 'Plasma Concentration (µg/mL)',
                     data: plasmaData,
-                    borderColor: 'rgba(0, 122, 255, 1)',
+                    borderColor: '#29B6F6',
+                    borderWidth: 2,
                     yAxisID: 'y-conc',
                     tension: 0.2, pointRadius: 0
                 },
                 {
                     label: 'Effect Site Concentration (µg/mL)',
                     data: effectData,
-                    borderColor: 'rgba(255, 149, 0, 1)',
+                    borderColor: '#4CAF50',
+                    borderWidth: 2,
                     yAxisID: 'y-conc',
                     tension: 0.2, pointRadius: 0
                 },
                 {
                     label: 'TOF Ratio (%)',
                     data: tofData,
-                    borderColor: 'rgba(52, 199, 89, 1)',
-                    backgroundColor: 'rgba(52, 199, 89, 0.1)',
+                    borderColor: '#CE93D8',
+                    backgroundColor: 'rgba(206, 147, 216, 0.08)',
+                    borderWidth: 2,
                     fill: true,
                     yAxisID: 'y-tof',
                     tension: 0.2, pointRadius: 0
@@ -418,18 +421,42 @@ function updateChart() {
             responsive: true,
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#a0a0a0',
+                        font: { family: 'Figtree', size: 12 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#333',
+                    titleColor: '#e0e0e0',
+                    bodyColor: '#e0e0e0',
+                    borderColor: '#4a4a4a',
+                    borderWidth: 1,
+                    titleFont: { family: 'Figtree' },
+                    bodyFont: { family: 'SF Mono, Menlo, monospace', size: 12 }
+                }
+            },
             scales: {
-                x: { title: { display: true, text: 'Time' } },
+                x: {
+                    title: { display: true, text: 'Time', color: '#a0a0a0', font: { family: 'Figtree' } },
+                    ticks: { color: '#a0a0a0', font: { family: 'Figtree', size: 11 } },
+                    grid: { color: 'rgba(255,255,255,0.08)' }
+                },
                 'y-conc': {
                     type: 'linear',
                     position: 'left',
-                    title: { display: true, text: 'Concentration (µg/mL)' },
+                    title: { display: true, text: 'Concentration (µg/mL)', color: '#a0a0a0', font: { family: 'Figtree' } },
+                    ticks: { color: '#a0a0a0', font: { family: 'Figtree', size: 11 } },
+                    grid: { color: 'rgba(255,255,255,0.08)' },
                     beginAtZero: true
                 },
                 'y-tof': {
                     type: 'linear',
                     position: 'right',
-                    title: { display: true, text: 'TOF Ratio (%)' },
+                    title: { display: true, text: 'TOF Ratio (%)', color: '#a0a0a0', font: { family: 'Figtree' } },
+                    ticks: { color: '#a0a0a0', font: { family: 'Figtree', size: 11 } },
                     min: 0,
                     max: 100,
                     grid: { drawOnChartArea: false }
