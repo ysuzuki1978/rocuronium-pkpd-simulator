@@ -1,4 +1,4 @@
-# Rocuronium PK/PD Simulator V1.1.0
+# Rocuronium PK/PD Simulator V1.2.0
 
 ## Overview
 
@@ -22,6 +22,8 @@ A Progressive Web Application for pharmacokinetic/pharmacodynamic simulation of 
 - **Covariate Integration**: Age and sex effects on pharmacodynamic parameters
 - **Real-time Visualization**: Interactive graphs showing plasma concentration, effect-site concentration, and TOF ratio
 - **iPhone-optimized PWA**: Offline capability, dark OR-monitor theme, safe-area support
+- **Phone layout (V1.2.0)**: Bottom tab bar (Patient / Dosing / Results / Info) with the plasma, effect-site and TOF values pinned above every tab; pinch to zoom, drag to pan and double-tap to reset on the results chart, with the legend chips showing the values at the cursor
+- **Current time buttons (V1.2.0)**: `Now` beside the dose time and beside the anesthesia start time
 
 ## System Requirements
 

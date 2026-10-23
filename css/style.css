@@ -115,13 +115,12 @@ li {
    Layout
    ============================================ */
 .main-app {
+    display: flex;
+    flex-direction: column;
     max-width: 1400px;
     margin: 0 auto;
-    padding: 16px;
-    padding-top: calc(16px + var(--sat));
-    padding-bottom: calc(16px + var(--sab));
-    padding-left: calc(16px + var(--sal));
-    padding-right: calc(16px + var(--sar));
+    /* Room at the bottom for the fixed tab bar on a phone. */
+    padding: var(--sat) calc(16px + var(--sar)) calc(80px + var(--sab)) calc(16px + var(--sal));
     background-color: var(--bg);
     min-height: 100vh;
 }
@@ -398,7 +397,6 @@ li {
     padding: 16px;
     margin-bottom: 24px;
     box-shadow: var(--shadow);
-    height: 400px;
 }
 
 /* ============================================
@@ -629,6 +627,13 @@ li {
 .form-group {
     margin-bottom: 20px;
 }
+
+.time-row { display: flex; gap: 8px; align-items: stretch; }
+/* Heavier than `.form-group input[type="time"]`, whose width: 100% would otherwise
+   win and push the button onto its own line. iOS does not shrink a time input
+   below its intrinsic width unless the width is taken off it. */
+.form-group .time-row input[type="time"] { width: auto; flex: 1 1 0; min-width: 0; }
+.now-btn { flex-shrink: 0; min-width: 64px; padding: 0 14px; }
 
 .form-group label {
     display: block;
@@ -946,24 +951,6 @@ li {
    Responsive Design
    ============================================ */
 @media (max-width: 768px) {
-    .main-app {
-        padding: 8px;
-        padding-top: calc(8px + var(--sat));
-        padding-bottom: calc(8px + var(--sab));
-        padding-left: calc(8px + var(--sal));
-        padding-right: calc(8px + var(--sar));
-    }
-
-    .tab-nav {
-        gap: 2px;
-    }
-
-    .tab-btn {
-        padding: 10px 8px;
-        font-size: 13px;
-        gap: 4px;
-    }
-
     .header h1 {
         font-size: 1.5rem;
     }
@@ -975,17 +962,6 @@ li {
 
     .summary-cards {
         grid-template-columns: 1fr 1fr;
-    }
-
-    .dose-event {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-    }
-
-    .dose-details {
-        flex-direction: column;
-        gap: 8px;
     }
 
     .actions {
@@ -1005,9 +981,6 @@ li {
         width: 100%;
     }
 
-    .chart-container {
-        height: 300px;
-    }
 }
 
 @media (max-width: 480px) {
@@ -1058,4 +1031,277 @@ select:focus-visible {
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
     }
+}
+
+/* ============================================
+   Phone layout: the answer pinned on top, the tabs at the thumb
+   ============================================ */
+
+/* Paints the strip of screen under the status bar once the page is installed. */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0 0 auto;
+    height: var(--sat);
+    background: var(--bg);
+    z-index: 40;
+}
+
+.sticky-head {
+    position: sticky;
+    top: var(--sat);
+    z-index: 20;
+    margin: 0 calc(-16px - var(--sal)) 16px calc(-16px - var(--sar));
+    padding: 8px calc(16px + var(--sar)) 10px calc(16px + var(--sal));
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+}
+
+.timebar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.patient-summary {
+    flex-shrink: 1;
+    min-width: 0;
+    min-height: 40px;
+    max-width: 58%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    color: var(--text);
+    font: inherit;
+    font-size: 11px;
+    padding: 4px 8px;
+    cursor: pointer;
+}
+.patient-summary:hover { border-color: var(--primary); color: var(--text-bright); }
+.patient-summary::after { content: ' \25B8'; color: var(--text-muted); }
+
+.scrub {
+    flex: 1;
+    min-width: 60px;
+    height: 28px;
+    accent-color: var(--primary);
+}
+.scrub:disabled { opacity: 0.35; }
+
+.scrub-value {
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-bright);
+    text-align: right;
+}
+
+.readouts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.readout {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 4px;
+    padding: 6px 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+}
+.r-label {
+    flex-basis: 100%;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+.r-value { font-size: 1.35rem; font-weight: 700; line-height: 1.2; }
+.r-unit { font-size: 10px; color: var(--text-secondary); }
+.readout.plasma .r-value { color: var(--chart-plasma); }
+.readout.effect .r-value { color: var(--chart-effect); }
+.readout.tof .r-value { color: var(--chart-tof); }
+
+.stale-note {
+    margin: 8px 0 0;
+    padding: 4px 8px;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--warning);
+    background: var(--warning-light);
+    border-radius: var(--border-radius-sm);
+}
+
+/* The chart. Tall enough to read on a phone held upright. `touch-action: pan-y`
+   leaves vertical scrolling to the browser and gives every horizontal drag and
+   pinch to chart-zoom.js. */
+.chart-container { padding: 12px; }
+.chart-wrap {
+    position: relative;
+    height: 380px;
+    height: clamp(300px, calc(100vh - 400px), 640px);
+    height: clamp(300px, calc(100dvh - 400px), 640px);
+    touch-action: pan-y;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.chart-cursor {
+    position: absolute;
+    top: 0;
+    width: 0;
+    border-left: 1px dashed var(--text-secondary);
+    pointer-events: none;
+}
+
+.chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.legend-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 4px 10px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 11px;
+    line-height: 1.3;
+    cursor: pointer;
+}
+.legend-chip.off { opacity: 0.42; }
+.legend-chip.off .legend-name { text-decoration: line-through; }
+.legend-swatch {
+    flex-shrink: 0;
+    width: 16px;
+    height: 10px;
+    background: linear-gradient(to bottom, transparent 40%, var(--swatch) 40%, var(--swatch) 60%, transparent 60%);
+}
+.legend-name { font-weight: 600; color: var(--text-bright); }
+.legend-value { font-weight: 600; color: var(--text-bright); }
+.legend-value:empty { display: none; }
+.legend-unit { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+.chart-tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 8px;
+}
+.chart-hint { font-size: 10px; line-height: 1.4; color: var(--text-muted); }
+.chart-zoom { display: flex; gap: 6px; flex-shrink: 0; }
+.zoom-btn {
+    min-width: 44px;
+    min-height: 40px;
+    padding: 0 10px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-bright);
+    font-family: var(--font);
+    font-size: 16px;
+    cursor: pointer;
+}
+.zoom-btn:hover:not(:disabled) { border-color: var(--primary); }
+.zoom-btn:disabled { opacity: 0.35; cursor: default; }
+.zoom-reset { font-size: 12px; font-weight: 600; }
+
+/* The table is a long record, one row a minute. It scrolls inside its own box
+   with the header pinned, so it does not push the export button out of reach. */
+.results-table-container { max-height: 360px; overflow: auto; }
+.results-table th { position: sticky; top: 0; z-index: 1; }
+
+@media (max-width: 899.98px) {
+    .tab-nav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 30;
+        gap: 0;
+        margin: 0;
+        padding: 0 var(--sar) var(--sab) var(--sal);
+        background-color: #111;
+        border: none;
+        border-top: 1px solid var(--border);
+        border-radius: 0;
+    }
+    .tab-btn {
+        min-height: 54px;
+        padding: 0 2px;
+        border-radius: 0;
+        border-top: 2px solid transparent;
+        font-size: 12px;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .tab-btn:hover { background: transparent; }
+    .tab-btn.active {
+        background-color: rgba(0, 188, 212, 0.1);
+        color: var(--text-bright);
+        border-top-color: var(--primary);
+    }
+    .tab-content { min-height: 0; }
+
+    .header { margin-bottom: 16px; }
+    .header h1 { font-size: 1.25rem; margin-bottom: 4px; }
+    .card { margin-bottom: 16px; }
+
+    .summary-cards { gap: 8px; margin-bottom: 16px; }
+    .summary-card { padding: 12px; }
+    .summary-card h4 { margin-bottom: 6px; }
+    .summary-card .value { font-size: 1.5rem; }
+    .chart-container { margin-bottom: 16px; }
+
+    /* Sliders: a thin track inside a finger-sized target. */
+    .form-group input[type="range"] {
+        height: 34px;
+        padding: 14px 0;
+        background-clip: content-box;
+    }
+    .form-group input[type="range"]::-webkit-slider-thumb { width: 28px; height: 28px; margin-top: -11px; }
+    .radio-group label { min-height: 44px; }
+    .radio-group input[type="radio"] { width: 22px; height: 22px; }
+    .modal-content { max-height: calc(100vh - 2rem); }
+}
+
+@media (min-width: 900px) {
+    .main-app { padding-bottom: 16px; }
+    .tab-nav { order: -1; margin-top: 16px; }
+    .sticky-head { padding-top: 10px; }
+    .readout { padding: 8px 12px; }
+    .r-value { font-size: 1.6rem; }
+    .chart-wrap { height: clamp(380px, calc(100vh - 420px), 700px); }
+}
+
+/* A phone on its side has no height to spare for a pinned strip. */
+@media (max-height: 500px) and (max-width: 899.98px) {
+    .sticky-head { position: static; }
+    .tab-btn { min-height: 44px; }
+    .main-app { padding-bottom: 60px; }
+}
+
+.readouts.stale { opacity: 0.45; }
+.dose-details { flex-wrap: wrap; }
+.dose-info { min-width: 0; }
+
+@media (max-width: 899.98px) {
+    #toDoseScheduleBtn, #exportCsvBtn, #toDoseTabBtn { width: 100%; }
+}
+@media (max-width: 480px) {
+    .legend-u { display: none; }
 }

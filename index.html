@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="description" content="Rocuronium pharmacokinetic and pharmacodynamic simulator for education and research">
     <meta name="keywords" content="rocuronium, pharmacokinetics, pharmacodynamics, anesthesia, simulation, neuromuscular blocking agent">
     <meta name="author" content="YASUYUKI SUZUKI">
@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a1a1a">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/vendor/chart.umd.min.js"></script>
 </head>
 <body>
     <!-- Disclaimer Modal -->
@@ -34,21 +34,28 @@
 
     <!-- Main App Container -->
     <div id="mainApp" class="main-app hidden">
-        <!-- Navigation Tabs -->
-        <nav class="tab-nav">
-            <button class="tab-btn active" data-tab="patient">
-                <span class="tab-text">Patient</span>
-            </button>
-            <button class="tab-btn" data-tab="dose">
-                <span class="tab-text">Dosing</span>
-            </button>
-            <button class="tab-btn" data-tab="results">
-                <span class="tab-text">Results</span>
-            </button>
-            <button class="tab-btn" data-tab="info">
-                <span class="tab-text">Info</span>
-            </button>
-        </nav>
+        <!-- The answer stays on screen in every tab: the values at the chosen
+             minute, and the slider that chooses it. -->
+        <div class="sticky-head">
+            <div class="timebar">
+                <button type="button" class="patient-summary" id="patientSummary">
+                    <span id="patientSummaryText">50 y · 70 kg · 170 cm · M</span>
+                </button>
+                <input type="range" id="cursorRange" class="scrub" min="0" max="0" step="1" value="0" disabled
+                       aria-label="Read the concentrations at this many minutes">
+                <output class="scrub-value" id="cursorValue" for="cursorRange">&mdash;</output>
+            </div>
+            <div class="readouts" id="readouts">
+                <div class="readout plasma"><span class="r-label">Plasma</span>
+                    <span class="r-value data-value" id="readCp">&mdash;</span><span class="r-unit">&micro;g/mL</span></div>
+                <div class="readout effect"><span class="r-label">Effect site</span>
+                    <span class="r-value data-value" id="readCe">&mdash;</span><span class="r-unit">&micro;g/mL</span></div>
+                <div class="readout tof"><span class="r-label">TOF ratio</span>
+                    <span class="r-value data-value" id="readTof">&mdash;</span><span class="r-unit">%</span></div>
+            </div>
+            <p class="stale-note" id="staleNote" hidden>The patient or doses changed after this run. Run the simulation again.</p>
+        </div>
+
 
         <!-- Tab Panels -->
         <main class="tab-content">
@@ -143,21 +150,35 @@
                         <p id="calculationMethod" class="subtitle"></p>
                     </div>
 
+                    <div class="chart-container">
+                        <div class="chart-legend" id="chartLegend"></div>
+                        <div class="chart-wrap" id="chartWrap">
+                            <canvas id="concentrationChart"></canvas>
+                            <div class="chart-cursor" id="chartCursor" hidden aria-hidden="true"></div>
+                        </div>
+                        <!-- Pinch or Ctrl+wheel to zoom, drag to pan, double-tap to
+                             reset. The buttons are for hands that cannot pinch. -->
+                        <div class="chart-tools">
+                            <span class="chart-hint">Pinch or Ctrl+wheel to zoom &middot; drag to pan &middot; double-tap to reset</span>
+                            <span class="chart-zoom">
+                                <button type="button" class="zoom-btn" id="zoomOut" aria-label="Zoom out">&minus;</button>
+                                <button type="button" class="zoom-btn" id="zoomIn" aria-label="Zoom in">+</button>
+                                <button type="button" class="zoom-btn zoom-reset" id="zoomReset" aria-label="Show the whole run" disabled>Fit</button>
+                            </span>
+                        </div>
+                    </div>
+
                     <div class="summary-cards">
                         <div class="summary-card plasma">
-                            <h4>Peak Plasma Concentration</h4>
+                            <h4>Peak plasma</h4>
                             <span id="maxPlasma" class="value data-value">0.000</span>
                             <span class="unit">µg/mL</span>
                         </div>
                         <div class="summary-card effect">
-                            <h4>Peak Effect-Site Concentration</h4>
+                            <h4>Peak effect site</h4>
                             <span id="maxEffect" class="value data-value">0.000</span>
                             <span class="unit">µg/mL</span>
                         </div>
-                    </div>
-
-                    <div class="chart-container">
-                        <canvas id="concentrationChart" width="400" height="300"></canvas>
                     </div>
 
                     <div class="results-table-container">
@@ -165,9 +186,9 @@
                             <thead>
                                 <tr>
                                     <th>Time</th>
-                                    <th>Plasma Concentration</th>
-                                    <th>Effect-Site Concentration</th>
-                                    <th>TOF Ratio</th>
+                                    <th>Plasma</th>
+                                    <th>Effect site</th>
+                                    <th>TOF %</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -187,7 +208,7 @@
                 <div class="info-content">
                     <div class="header">
                         <h1>Rocuronium PK/PD Simulator</h1>
-                        <p class="version">Version 1.1.0</p>
+                        <p class="version">Version 1.2.0</p>
                         <p class="rk4-badge">Enhanced RK4 Integration</p>
                     </div>
 
@@ -314,6 +335,22 @@
                 </div>
             </section>
         </main>
+
+        <!-- Fixed to the bottom of the screen on a phone, where a thumb reaches it. -->
+        <nav class="tab-nav">
+            <button class="tab-btn active" data-tab="patient">
+                <span class="tab-text">Patient</span>
+            </button>
+            <button class="tab-btn" data-tab="dose">
+                <span class="tab-text">Dosing</span>
+            </button>
+            <button class="tab-btn" data-tab="results">
+                <span class="tab-text">Results</span>
+            </button>
+            <button class="tab-btn" data-tab="info">
+                <span class="tab-text">Info</span>
+            </button>
+        </nav>
     </div>
 
     <!-- Patient Editor Modal -->
@@ -365,7 +402,11 @@
                 
                 <div class="form-group">
                     <label for="editAnesthesiaStart">Anesthesia Start Time</label>
-                    <input type="time" id="editAnesthesiaStart" value="08:00">
+                    <div class="time-row">
+                        <input type="time" id="editAnesthesiaStart" value="08:00">
+                        <button type="button" id="startNowBtn" class="secondary-btn now-btn"
+                                title="Set to the current time">Now</button>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -394,7 +435,12 @@
                 
                 <div class="form-group">
                     <label for="doseTime">Dose Time</label>
-                    <input type="time" id="doseTime" value="08:00" required>
+                    <div class="time-row">
+                        <input type="time" id="doseTime" value="08:00" required>
+                        <button type="button" id="doseNowBtn" class="secondary-btn now-btn"
+                                title="Set to the current time">Now</button>
+                    </div>
+                    <p class="note" id="doseTimeNote" aria-live="polite"></p>
                 </div>
                 
                 <div class="form-group">
@@ -419,6 +465,7 @@
 
     <script src="js/models.js"></script>
     <script src="js/calculator.js"></script>
+    <script src="js/chart-zoom.js"></script>
     <script src="js/main.js"></script>
     
     <!-- PWA Service Worker Registration -->
