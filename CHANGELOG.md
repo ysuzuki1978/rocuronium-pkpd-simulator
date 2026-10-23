@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-10-23
+
+### Added
+- Bottom tab bar with a fixed strip of the plasma, effect-site and TOF values above every tab; the Results tab is ordered chart, peak values, table
+- Pinch zoom, drag pan, double-tap reset, `+` / `−` / `Fit` buttons and Ctrl+wheel on the results chart (`js/chart-zoom.js`); the y axis follows the visible window; legend chips show the values at the cursor on touch screens (no tooltip)
+- `Now` button beside the dose time, with a line saying which minute of the case the entered time is (a time before the anesthesia start is counted as the next day, and the form says so)
+- `Now` button beside the anesthesia start time
+- A note on the strip when the patient or the doses changed after the last run
+
+### Changed
+- The results chart uses a linear time axis (minutes) with clock-time tick labels
+- Chart.js 4.4.1 is bundled (`js/vendor/chart.umd.min.js`) instead of loaded from a CDN, so the chart also draws offline
+- `viewport-fit=cover` added so that the safe-area insets take effect
+
+### Notes
+- No change to `js/models.js` or `js/calculator.js`. Output for five models and three dose events was identical before and after (point count, peak Cp, peak Ce and the CSV hash).
+
 ## [1.1.0] - 2025-07-20
 
 ### Added

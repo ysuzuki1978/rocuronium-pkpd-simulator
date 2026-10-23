@@ -7,8 +7,19 @@ let appState = {
     doseEvents: [],
     simulationResult: null,
     isCalculating: false,
-    chart: null
+    chart: null,
+    cursorMin: 0
 };
+
+// Series the reader has switched off. Kept apart from the chart because the
+// chart is rebuilt on every run.
+const hiddenSeries = new Set();
+
+// A finger gets no tooltip: it stays after the touch ends and covers the curves.
+// A tap moves the time cursor instead and the legend chips read the values there.
+const COARSE_POINTER = window.matchMedia('(pointer: coarse)').matches;
+
+let zoom = null;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
@@ -69,6 +80,9 @@ function setupEventListeners() {
     // Dose Editor
     document.getElementById('closeDoseModal').addEventListener('click', hideDoseEventEditor);
     document.getElementById('cancelDoseAdd').addEventListener('click', hideDoseEventEditor);
+    document.getElementById('doseNowBtn').addEventListener('click', setDoseTimeNow);
+    document.getElementById('startNowBtn').addEventListener('click', setStartTimeNow);
+    document.getElementById('doseTime').addEventListener('input', updateDoseTimeNote);
     document.getElementById('doseForm').addEventListener('submit', addDoseEvent);
     
     // Sliders
@@ -77,6 +91,35 @@ function setupEventListeners() {
     
     // Export
     document.getElementById('exportCsvBtn').addEventListener('click', exportToCsv);
+
+    // Pinned strip: the summary is a shortcut to the fields it summarises
+    document.getElementById('patientSummary').addEventListener('click', () => {
+        switchTab('patient');
+        showPatientEditor();
+    });
+    document.getElementById('cursorRange').addEventListener('input', (e) => {
+        setCursor(Number(e.target.value));
+    });
+
+    // Chart: pinch / drag / wheel / double-tap, and buttons for the same
+    zoom = createChartZoom({
+        host: document.getElementById('chartWrap'),
+        getChart: () => appState.chart,
+        getDuration: () => (appState.simulationResult ? appState.simulationResult.simulationDurationMinutes : 0),
+        onChange: applyView,
+        onCursor: (t) => setCursor(Math.round(t))
+    });
+    document.getElementById('zoomIn').addEventListener('click', () => zoom.step(0.5));
+    document.getElementById('zoomOut').addEventListener('click', () => zoom.step(2));
+    document.getElementById('zoomReset').addEventListener('click', () => zoom.reset());
+    document.getElementById('chartLegend').addEventListener('click', (e) => {
+        const chip = e.target.closest('.legend-chip');
+        if (!chip) return;
+        const series = chip.dataset.series;
+        if (hiddenSeries.has(series)) hiddenSeries.delete(series); else hiddenSeries.add(series);
+        updateChart();
+    });
+    window.addEventListener('resize', () => moveCursor());
 
     // Modal backdrop
     document.querySelectorAll('.modal').forEach(modal => {
@@ -168,6 +211,7 @@ function showDoseEventEditor() {
     document.getElementById('bolusValue').textContent = '0.0';
     document.getElementById('continuousValue').textContent = '0.0';
     document.getElementById('anesthesiaStartTime').textContent = appState.patient.formattedStartTime;
+    updateDoseTimeNote();
     modal.classList.add('active');
 }
 
@@ -186,6 +230,14 @@ function switchTab(tabName) {
     document.getElementById(`${tabName}Tab`).classList.add('active');
     
     updateSimulationButtonState();
+
+    // The chart was drawn into a canvas that was display:none while its tab was
+    // hidden, so it has no size to lay out against until the tab is shown.
+    if (tabName === 'results' && appState.chart) {
+        appState.chart.resize();
+        moveCursor();
+    }
+    window.scrollTo(0, 0);
 }
 
 // --- Patient Data ---
@@ -215,6 +267,7 @@ function savePatientData(e) {
     
     updatePatientDisplay();
     updateDoseEventsDisplay();
+    markStale();
     hidePatientEditor();
 }
 
@@ -228,9 +281,61 @@ function updatePatientDisplay() {
     document.getElementById('patientSex').textContent = SexType.displayName(p.sex);
     document.getElementById('patientModel').textContent = ModelType.displayName(p.model);
     document.getElementById('anesthesiaStart').textContent = p.formattedStartTime;
+    document.getElementById('patientSummaryText').textContent =
+        `${p.age} y · ${p.weight.toFixed(0)} kg · ${p.height.toFixed(0)} cm · ${p.sex === SexType.MALE ? 'M' : 'F'} · ${ModelType.displayName(p.model)}`;
+}
+
+// Results describe the patient and doses they were run with. Once either
+// changes, the numbers in the pinned strip no longer belong to what is shown.
+function markStale() {
+    if (appState.simulationResult) document.getElementById('staleNote').hidden = false;
+    document.getElementById('readouts').classList.add('stale');
 }
 
 // --- Dose Events ---
+
+/**
+ * How far into the case a clock time ("HH:MM") is. A time before the anaesthesia
+ * start is read as the following day, which is the only reading that describes
+ * a case; `wrapped` says that happened, so the form can show it.
+ */
+function minutesIntoCase(timeValue) {
+    const at = new Date(appState.patient.anesthesiaStartTime);
+    const [hours, minutes] = timeValue.split(':').map(Number);
+    at.setHours(hours, minutes, 0, 0);
+    let diff = appState.patient.clockTimeToMinutes(at);
+    const wrapped = diff < 0;
+    if (wrapped) diff += 1440;
+    return { minutes: Math.max(0, Math.round(diff)), wrapped };
+}
+
+const clockNow = () => {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+};
+
+/** Puts the current wall-clock time in the dose time field. */
+function setDoseTimeNow() {
+    document.getElementById('doseTime').value = clockNow();
+    updateDoseTimeNote();
+}
+
+/** The anesthesia start field in the patient editor, set to the wall clock. */
+function setStartTimeNow() {
+    document.getElementById('editAnesthesiaStart').value = clockNow();
+}
+
+/** Says where the entered time falls in the case, before it is added. */
+function updateDoseTimeNote() {
+    const note = document.getElementById('doseTimeNote');
+    const value = document.getElementById('doseTime').value;
+    if (!value) { note.textContent = ''; return; }
+    const { minutes, wrapped } = minutesIntoCase(value);
+    note.textContent = wrapped
+        ? `Before the anesthesia start (${appState.patient.formattedStartTime}), so this is counted as the next day: minute ${minutes}. Change the start time in the patient settings if the case has already begun.`
+        : `Minute ${minutes} of the case.`;
+}
+
 function addDoseEvent(e) {
     e.preventDefault();
     
@@ -238,13 +343,7 @@ function addDoseEvent(e) {
     const bolusAmount = parseFloat(document.getElementById('bolusAmount').value);
     const continuousRate = parseFloat(document.getElementById('continuousRate').value);
     
-    const doseTime = new Date(appState.patient.anesthesiaStartTime);
-    const [hours, minutes] = timeValue.split(':').map(Number);
-    doseTime.setHours(hours, minutes, 0, 0);
-    
-    let minutesFromStart = appState.patient.clockTimeToMinutes(doseTime);
-    if (minutesFromStart < 0) minutesFromStart += 1440;
-    minutesFromStart = Math.max(0, Math.round(minutesFromStart));
+    const { minutes: minutesFromStart } = minutesIntoCase(timeValue);
     
     const doseEvent = new DoseEvent(minutesFromStart, bolusAmount, continuousRate);
     
@@ -259,6 +358,7 @@ function addDoseEvent(e) {
     
     updateDoseEventsDisplay();
     updateSimulationButtonState();
+    markStale();
     hideDoseEventEditor();
 }
 
@@ -266,6 +366,7 @@ function removeDoseEvent(index) {
     appState.doseEvents.splice(index, 1);
     updateDoseEventsDisplay();
     updateSimulationButtonState();
+    markStale();
 }
 
 function updateDoseEventsDisplay() {
@@ -352,10 +453,21 @@ function updateResultsDisplay() {
     document.getElementById('calculationMethod').textContent = result.calculationMethod;
     document.getElementById('maxPlasma').textContent = result.maxPlasmaConcentration.toFixed(3);
     document.getElementById('maxEffect').textContent = result.maxEffectSiteConcentration.toFixed(3);
-    
+
+    document.getElementById('staleNote').hidden = true;
+    document.getElementById('readouts').classList.remove('stale');
+
+    // Open on the minute of the effect-site peak: the first thing worth reading.
+    const ce = result.timePoints.map(tp => tp.effectSiteConcentration);
+    appState.cursorMin = result.timePoints[ce.indexOf(Math.max(...ce))].timeInMinutes;
+    const range = document.getElementById('cursorRange');
+    range.max = String(result.simulationDurationMinutes);
+    range.disabled = false;
+    zoom.reset();
 
     updateChart();
     updateTable();
+    drawCursorReadouts();
 }
 
 function updateTable() {
@@ -372,62 +484,141 @@ function updateTable() {
     });
 }
 
+/** The point at minute `t`; the run is sampled once a minute. */
+function pointAt(t) {
+    const points = appState.simulationResult.timePoints;
+    return points[Math.min(Math.max(Math.round(t), 0), points.length - 1)];
+}
+
+function setCursor(t) {
+    if (!appState.simulationResult) return;
+    appState.cursorMin = Math.min(Math.max(Math.round(t), 0), appState.simulationResult.simulationDurationMinutes);
+    drawCursorReadouts();
+    moveCursor();
+}
+
+/** The pinned strip, the slider and the legend chips, all read at the cursor. */
+function drawCursorReadouts() {
+    const result = appState.simulationResult;
+    if (!result) return;
+    const tp = pointAt(appState.cursorMin);
+    document.getElementById('readCp').textContent = tp.plasmaConcentrationString;
+    document.getElementById('readCe').textContent = tp.effectSiteConcentrationString;
+    document.getElementById('readTof').textContent = tp.tofRatioString;
+    document.getElementById('cursorRange').value = String(tp.timeInMinutes);
+    document.getElementById('cursorValue').textContent =
+        `${tp.formattedClockTime(appState.patient)} · ${tp.timeInMinutes} min`;
+    const values = { plasma: tp.plasmaConcentrationString, effect: tp.effectSiteConcentrationString, tof: tp.tofRatioString };
+    document.querySelectorAll('[data-value-for]').forEach(node => {
+        node.textContent = hiddenSeries.has(node.dataset.valueFor) ? '' : values[node.dataset.valueFor];
+    });
+}
+
+/** The cursor line is an element over the canvas, placed from the chart's own scale. */
+function moveCursor() {
+    const line = document.getElementById('chartCursor');
+    const chart = appState.chart;
+    if (!chart || !chart.scales?.x || !chart.chartArea) { line.hidden = true; return; }
+    const x = chart.scales.x;
+    const area = chart.chartArea;
+    if (appState.cursorMin < x.min || appState.cursorMin > x.max) { line.hidden = true; return; }
+    line.hidden = false;
+    line.style.left = `${x.getPixelForValue(appState.cursorMin)}px`;
+    line.style.top = `${area.top}px`;
+    line.style.height = `${area.bottom - area.top}px`;
+}
+
+/**
+ * Top of the concentration axis for what is inside the window, so that zooming
+ * into the washout does not leave the curves flat along the bottom of an axis
+ * sized for the peak.
+ */
+function concentrationTop(datasets, win) {
+    let peak = 0;
+    for (const set of datasets) {
+        if (set.yAxisID !== 'y-conc' || set.hidden) continue;
+        for (const point of set.data) {
+            if (point.x >= win.min && point.x <= win.max && point.y > peak) peak = point.y;
+        }
+    }
+    return peak > 0 ? peak * 1.08 : 1;
+}
+
+/** Moves the window on the chart that is already drawn. */
+function applyView() {
+    document.getElementById('zoomReset').disabled = !zoom.isZoomed();
+    const chart = appState.chart;
+    if (!chart) return;
+    const win = zoom.window();
+    chart.options.scales.x.min = win.min;
+    chart.options.scales.x.max = win.max;
+    chart.options.scales['y-conc'].max = concentrationTop(chart.data.datasets, win);
+    chart.update('none');
+    moveCursor();
+}
+
+function drawLegend(chips) {
+    document.getElementById('chartLegend').innerHTML = chips.map(c => {
+        const off = hiddenSeries.has(c.series);
+        return `<button type="button" class="legend-chip${off ? ' off' : ''}" data-series="${c.series}"
+                    aria-pressed="${!off}" title="${off ? 'Show' : 'Hide'} ${c.label}">
+                <span class="legend-swatch" style="--swatch:${c.colour}"></span>
+                <span class="legend-name">${c.label}</span>
+                <span class="legend-value data-value" data-value-for="${c.series}"></span>
+                <span class="legend-unit"><span class="legend-u">${c.unit} </span>${c.side}</span>
+            </button>`;
+    }).join('');
+}
+
 function updateChart() {
     if (appState.chart) appState.chart.destroy();
 
     const ctx = document.getElementById('concentrationChart').getContext('2d');
     const result = appState.simulationResult;
     const chartData = result.timePoints;
+    const toPoints = (key) => chartData.map(tp => ({ x: tp.timeInMinutes, y: tp[key] }));
+    const axisFont = { family: 'Figtree', size: 11 };
 
-    const labels = chartData.map(tp => tp.formattedClockTime(appState.patient));
-    const plasmaData = chartData.map(tp => tp.plasmaConcentration);
-    const effectData = chartData.map(tp => tp.effectSiteConcentration);
-    const tofData = chartData.map(tp => tp.tofRatio);
+    const series = [
+        { series: 'plasma', label: 'Plasma', unit: 'µg/mL', side: '←', colour: '#29B6F6', key: 'plasmaConcentration', axis: 'y-conc' },
+        { series: 'effect', label: 'Effect site', unit: 'µg/mL', side: '←', colour: '#4CAF50', key: 'effectSiteConcentration', axis: 'y-conc' },
+        { series: 'tof', label: 'TOF ratio', unit: '%', side: '→', colour: '#CE93D8', key: 'tofRatio', axis: 'y-tof' }
+    ];
+    const datasets = series.map(sr => ({
+        label: `${sr.label} (${sr.unit})`,
+        data: toPoints(sr.key),
+        borderColor: sr.colour,
+        backgroundColor: sr.series === 'tof' ? 'rgba(206, 147, 216, 0.08)' : undefined,
+        fill: sr.series === 'tof',
+        borderWidth: 2,
+        yAxisID: sr.axis,
+        tension: 0.2,
+        pointRadius: 0,
+        series: sr.series,
+        hidden: hiddenSeries.has(sr.series)
+    }));
+    drawLegend(series);
+
+    const win = zoom.window();
+    // The window is minutes into the run; ticks are written as the clock time of that minute.
+    const clockAt = (minute) => {
+        const tp = chartData[Math.round(minute)];
+        return tp ? tp.formattedClockTime(appState.patient) : '';
+    };
 
     appState.chart = new Chart(ctx, {
         type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Plasma Concentration (µg/mL)',
-                    data: plasmaData,
-                    borderColor: '#29B6F6',
-                    borderWidth: 2,
-                    yAxisID: 'y-conc',
-                    tension: 0.2, pointRadius: 0
-                },
-                {
-                    label: 'Effect Site Concentration (µg/mL)',
-                    data: effectData,
-                    borderColor: '#4CAF50',
-                    borderWidth: 2,
-                    yAxisID: 'y-conc',
-                    tension: 0.2, pointRadius: 0
-                },
-                {
-                    label: 'TOF Ratio (%)',
-                    data: tofData,
-                    borderColor: '#CE93D8',
-                    backgroundColor: 'rgba(206, 147, 216, 0.08)',
-                    borderWidth: 2,
-                    fill: true,
-                    yAxisID: 'y-tof',
-                    tension: 0.2, pointRadius: 0
-                }
-            ]
-        },
+        data: { datasets },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: { duration: 0 },
             interaction: { mode: 'index', intersect: false },
+            events: COARSE_POINTER ? [] : ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'],
             plugins: {
-                legend: {
-                    labels: {
-                        color: '#a0a0a0',
-                        font: { family: 'Figtree', size: 12 }
-                    }
-                },
+                // Drawn in HTML above the canvas: it takes no height from the plot
+                // and its chips carry the values at the cursor.
+                legend: { display: false },
                 tooltip: {
                     backgroundColor: '#333',
                     titleColor: '#e0e0e0',
@@ -435,35 +626,54 @@ function updateChart() {
                     borderColor: '#4a4a4a',
                     borderWidth: 1,
                     titleFont: { family: 'Figtree' },
-                    bodyFont: { family: 'SF Mono, Menlo, monospace', size: 12 }
+                    bodyFont: { family: 'SF Mono, Menlo, monospace', size: 12 },
+                    callbacks: {
+                        title: (items) => `${clockAt(items[0].parsed.x)} (${items[0].parsed.x} min)`
+                    }
                 }
             },
             scales: {
                 x: {
-                    title: { display: true, text: 'Time', color: '#a0a0a0', font: { family: 'Figtree' } },
-                    ticks: { color: '#a0a0a0', font: { family: 'Figtree', size: 11 } },
+                    type: 'linear',
+                    min: win.min,
+                    max: win.max,
+                    ticks: {
+                        color: '#a0a0a0', font: axisFont, maxTicksLimit: 6,
+                        includeBounds: false, maxRotation: 0,
+                        callback: (value) => clockAt(value)
+                    },
                     grid: { color: 'rgba(255,255,255,0.08)' }
                 },
                 'y-conc': {
                     type: 'linear',
                     position: 'left',
-                    title: { display: true, text: 'Concentration (µg/mL)', color: '#a0a0a0', font: { family: 'Figtree' } },
-                    ticks: { color: '#a0a0a0', font: { family: 'Figtree', size: 11 } },
-                    grid: { color: 'rgba(255,255,255,0.08)' },
-                    beginAtZero: true
+                    min: 0,
+                    max: concentrationTop(datasets, win),
+                    // Decimals follow the size of the axis, so a zoomed axis that spans
+                    // 0.2 to 0.3 does not print 0.3 on two neighbouring ticks.
+                    ticks: {
+                        color: '#a0a0a0', font: axisFont, maxTicksLimit: 6,
+                        callback: (value, index, ticks) => {
+                            const top = ticks[ticks.length - 1]?.value ?? value;
+                            return Number(value.toFixed(top < 1 ? 3 : top < 10 ? 2 : 1));
+                        }
+                    },
+                    grid: { color: 'rgba(255,255,255,0.08)' }
                 },
                 'y-tof': {
                     type: 'linear',
                     position: 'right',
-                    title: { display: true, text: 'TOF Ratio (%)', color: '#a0a0a0', font: { family: 'Figtree' } },
-                    ticks: { color: '#a0a0a0', font: { family: 'Figtree', size: 11 } },
                     min: 0,
                     max: 100,
+                    ticks: { color: '#a0a0a0', font: axisFont, maxTicksLimit: 6 },
                     grid: { drawOnChartArea: false }
                 }
             }
         }
     });
+    document.getElementById('zoomReset').disabled = !zoom.isZoomed();
+    drawCursorReadouts();
+    moveCursor();
 }
 
 // --- Export ---
