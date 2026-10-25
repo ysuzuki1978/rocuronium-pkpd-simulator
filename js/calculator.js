@@ -1,5 +1,7 @@
 // PK/PD Calculation Engine for Rocuronium
 
+const GRID_EPS = 1e-9; // minutes; tolerance when comparing event times with the integration grid
+
 // Based on Masui, K., et al. J Anesth 32, 709–716 (2018).
 const RocuroniumPKPDModelData = {
     Wierda: {
@@ -77,8 +79,9 @@ class PKCalculationEngine {
         
         const timeStep = 0.01; // 0.01 min precision
         const times = [];
-        for (let t = 0; t <= finalDuration; t += timeStep) {
-            times.push(t);
+        // Index-based grid: `t += timeStep` drifts (59.99999999999 < 60) and applies rate changes one step late
+        for (let i = 0; i * timeStep <= finalDuration + GRID_EPS; i++) {
+            times.push(i * timeStep);
         }
 
         // --- Unified 4-Dimensional RK4 Calculation (a1, a2, a3, Ce) ---
@@ -134,7 +137,7 @@ class PKCalculationEngine {
             }
 
             // Update infusion rate
-            while (infusionIndex < infusionSchedule.length && currentTime >= infusionSchedule[infusionIndex].time) {
+            while (infusionIndex < infusionSchedule.length && currentTime >= infusionSchedule[infusionIndex].time - GRID_EPS) {
                 currentInfusionRate = infusionSchedule[infusionIndex].rate;
                 infusionIndex++;
             }
