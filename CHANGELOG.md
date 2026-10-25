@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-10-25
+
+### Fixed
+- Rate changes were applied one integration step (0.01 min) late at some event minutes (10, 60, 240 ...): the time grid was built with `t += 0.01`, which drifts (59.99999999999 at minute 60), so the strict `>=` test missed the event. The grid is now index based (`i * 0.01`) with a 1e-9 min tolerance. Max relative error of Cp and Ce against the matrix-exponential solution: 5.7e-4 (Wierda, one dose set) and 1.7e-3 (worst of 5 models x 3 dose sets) before, 2.3e-12 and 5.6e-12 after
+- A start time with seconds and a dose time in the same minute was read as the next day (minute 1440); the start is now compared to the minute
+
+### Changed
+- Wall-clock handling is in `js/clock.js` (`formatClock`, `parseClock`, `withClock`, `minutesIntoCase`), pure functions with no DOM or `appState`; invalid times show an alert instead of producing NaN. `00:00` is printed at midnight (`toLocaleTimeString('ja-JP')` can print `24:00`)
+- Display formatting (concentrations, TOF, clock labels, CSV) moved from the model classes to `js/format.js`; `models.js` holds data and validation only
+- `SimulationResult` records `sampleIntervalMin` and has `pointAt(minute)`, which finds a sample by time; the chart cursor and the axis labels no longer assume index = minute
+- `package.json` and `test/` added (`npm test`, 38 tests, including negative controls for the old time grid, a one-step delay and a 60x rate error)
+
+### Removed
+- Unused `updateSystemState`, `calculateEffectSiteConcentrations` (Euler), `SystemState`, `TimePoint.doseEvent` (per-sample `find`), and `Patient.clockTimeToMinutes`; 65 lines in the dead-code commit. Output of the unchanged paths is bit-identical (14460 values)
+
 ## [1.2.0] - 2026-10-23
 
 ### Added
