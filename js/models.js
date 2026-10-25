@@ -163,15 +163,6 @@ class RocuroniumPKPDParameters {
     }
 }
 
-// System State Class
-class SystemState {
-    constructor(a1 = 0.0, a2 = 0.0, a3 = 0.0) {
-        this.a1 = a1;
-        this.a2 = a2;
-        this.a3 = a3;
-    }
-}
-
 // Unified System State Class (4-dimensional: a1, a2, a3, Ce)
 class UnifiedSystemState {
     constructor(a1 = 0.0, a2 = 0.0, a3 = 0.0, ce = 0.0) {
@@ -184,9 +175,8 @@ class UnifiedSystemState {
 
 // Time Point Class
 class TimePoint {
-    constructor(timeInMinutes, doseEvent, plasmaConcentration, effectSiteConcentration, tofRatio) {
+    constructor(timeInMinutes, plasmaConcentration, effectSiteConcentration, tofRatio) {
         this.timeInMinutes = timeInMinutes;
-        this.doseEvent = doseEvent;
         this.plasmaConcentration = plasmaConcentration;
         this.effectSiteConcentration = effectSiteConcentration;
         this.tofRatio = tofRatio;

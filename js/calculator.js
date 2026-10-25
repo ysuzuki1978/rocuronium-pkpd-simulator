@@ -102,9 +102,7 @@ class PKCalculationEngine {
             const effectSite = effectSiteConcentrations[i];
             const tof = tofRatios[i];
 
-            const doseEvent = doseEvents.find(event => Math.abs(event.timeInMinutes - currentTime) < 0.5);
-
-            timePoints.push(new TimePoint(Math.round(currentTime), doseEvent, plasma, effectSite, tof));
+            timePoints.push(new TimePoint(Math.round(currentTime), plasma, effectSite, tof));
         }
         
         return new SimulationResult(
@@ -217,57 +215,6 @@ class PKCalculationEngine {
         newState.ce = Math.max(0.0, newState.ce);
 
         return newState;
-    }
-
-    // Legacy method for backward compatibility
-    updateSystemState(state, pk, infusionRate, dt) {
-        const { k10, k12, k21, k13, k31 } = pk;
-        
-        const derivatives = (s) => {
-            const da1_dt = infusionRate - (k10 + k12 + k13) * s.a1 + k21 * s.a2 + k31 * s.a3;
-            const da2_dt = k12 * s.a1 - k21 * s.a2;
-            const da3_dt = k13 * s.a1 - k31 * s.a3;
-            return { da1: da1_dt, da2: da2_dt, da3: da3_dt };
-        };
-
-        // 4th order Runge-Kutta integration
-        const k1 = derivatives(state);
-        const k2_state = new SystemState(state.a1 + dt * k1.da1 / 2, state.a2 + dt * k1.da2 / 2, state.a3 + dt * k1.da3 / 2);
-        const k2 = derivatives(k2_state);
-        const k3_state = new SystemState(state.a1 + dt * k2.da1 / 2, state.a2 + dt * k2.da2 / 2, state.a3 + dt * k2.da3 / 2);
-        const k3 = derivatives(k3_state);
-        const k4_state = new SystemState(state.a1 + dt * k3.da1, state.a2 + dt * k3.da2, state.a3 + dt * k3.da3);
-        const k4 = derivatives(k4_state);
-
-        const newState = new SystemState();
-        newState.a1 = state.a1 + dt * (k1.da1 + 2 * k2.da1 + 2 * k3.da1 + k4.da1) / 6;
-        newState.a2 = state.a2 + dt * (k1.da2 + 2 * k2.da2 + 2 * k3.da2 + k4.da2) / 6;
-        newState.a3 = state.a3 + dt * (k1.da3 + 2 * k2.da3 + 2 * k3.da3 + k4.da3) / 6;
-
-        // Ensure non-negative values
-        newState.a1 = Math.max(0.0, newState.a1);
-        newState.a2 = Math.max(0.0, newState.a2);
-        newState.a3 = Math.max(0.0, newState.a3);
-
-        return newState;
-    }
-
-    // Legacy Euler method for effect-site concentrations (deprecated)
-    // Now replaced by unified 4-dimensional RK4 system
-    calculateEffectSiteConcentrations(plasmaConcentrations, timePoints, ke0) {
-        console.warn("Using deprecated Euler method for effect-site calculation. Consider using unified RK4 approach.");
-        const ceValues = new Array(timePoints.length).fill(0);
-        ceValues[0] = 0.0;
-        
-        for (let i = 1; i < timePoints.length; i++) {
-            const dt = timePoints[i] - timePoints[i-1];
-            const cpPrev = plasmaConcentrations[i-1];
-            const cePrev = ceValues[i-1];
-            
-            const dce_dt = ke0 * (cpPrev - cePrev);
-            ceValues[i] = cePrev + dt * dce_dt;
-        }
-        return ceValues;
     }
 
     calculateTofRatios(effectSiteConcentrations, pd) {
