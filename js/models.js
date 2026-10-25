@@ -189,8 +189,9 @@ class TimePoint {
 
 // Simulation Result Class
 class SimulationResult {
-    constructor(timePoints, patient, doseEvents, calculationMethod, calculatedAt) {
+    constructor(timePoints, patient, doseEvents, calculationMethod, calculatedAt, sampleIntervalMin = 1) {
         this.timePoints = timePoints;
+        this.sampleIntervalMin = sampleIntervalMin; // spacing of timePoints, minutes
         this.patient = patient;
         this.doseEvents = doseEvents;
         this.calculationMethod = calculationMethod;
@@ -209,6 +210,21 @@ class SimulationResult {
     
     get simulationDurationMinutes() {
         return this.timePoints.length > 0 ? this.timePoints[this.timePoints.length - 1].timeInMinutes : 0;
+    }
+
+    /** The sample nearest to `minute` (clamped to the run), found by time, not by array position. */
+    pointAt(minute) {
+        const points = this.timePoints;
+        if (points.length === 0) return undefined;
+        let lo = 0;
+        let hi = points.length - 1;
+        while (lo < hi) {
+            const mid = (lo + hi) >> 1;
+            if (points[mid].timeInMinutes < minute) lo = mid + 1; else hi = mid;
+        }
+        const before = points[Math.max(lo - 1, 0)];
+        const after = points[lo];
+        return Math.abs(minute - before.timeInMinutes) <= Math.abs(after.timeInMinutes - minute) ? before : after;
     }
     
     toCSV() {

@@ -92,17 +92,16 @@ class PKCalculationEngine {
 
         // --- Format Results ---
         const timePoints = [];
-        const sampleInterval = Math.round(1.0 / timeStep); // Sample every 1 minute for display
+        const sampleIntervalMin = 1.0; // spacing of the displayed samples
+        const stepsPerSample = Math.round(sampleIntervalMin / timeStep);
 
-        for (let i = 0; i < times.length; i += sampleInterval) {
-            if (i >= times.length) break;
-            
+        for (let i = 0; i < times.length; i += stepsPerSample) {
             const currentTime = times[i];
             const plasma = plasmaConcentrations[i];
             const effectSite = effectSiteConcentrations[i];
             const tof = tofRatios[i];
 
-            timePoints.push(new TimePoint(Math.round(currentTime), plasma, effectSite, tof));
+            timePoints.push(new TimePoint(Math.round(currentTime * 1000) / 1000, plasma, effectSite, tof));
         }
         
         return new SimulationResult(
@@ -110,7 +109,8 @@ class PKCalculationEngine {
             patient,
             doseEvents,
             `${ModelType.displayName(patient.model)} Model`,
-            new Date()
+            new Date(),
+            sampleIntervalMin
         );
     }
 

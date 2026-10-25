@@ -466,12 +466,6 @@ function updateTable() {
     });
 }
 
-/** The point at minute `t`; the run is sampled once a minute. */
-function pointAt(t) {
-    const points = appState.simulationResult.timePoints;
-    return points[Math.min(Math.max(Math.round(t), 0), points.length - 1)];
-}
-
 function setCursor(t) {
     if (!appState.simulationResult) return;
     appState.cursorMin = Math.min(Math.max(Math.round(t), 0), appState.simulationResult.simulationDurationMinutes);
@@ -483,7 +477,7 @@ function setCursor(t) {
 function drawCursorReadouts() {
     const result = appState.simulationResult;
     if (!result) return;
-    const tp = pointAt(appState.cursorMin);
+    const tp = result.pointAt(appState.cursorMin);
     document.getElementById('readCp').textContent = tp.plasmaConcentrationString;
     document.getElementById('readCe').textContent = tp.effectSiteConcentrationString;
     document.getElementById('readTof').textContent = tp.tofRatioString;
@@ -584,7 +578,7 @@ function updateChart() {
     const win = zoom.window();
     // The window is minutes into the run; ticks are written as the clock time of that minute.
     const clockAt = (minute) => {
-        const tp = chartData[Math.round(minute)];
+        const tp = result.pointAt(minute);
         return tp ? tp.formattedClockTime(appState.patient) : '';
     };
 
