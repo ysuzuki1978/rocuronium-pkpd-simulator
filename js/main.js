@@ -207,10 +207,10 @@ function hidePatientEditor() {
 function showDoseEventEditor() {
     const modal = document.getElementById('doseModal');
     document.getElementById('doseForm').reset();
-    document.getElementById('doseTime').value = appState.patient.formattedStartTime;
+    document.getElementById('doseTime').value = formatClock(appState.patient.anesthesiaStartTime);
     document.getElementById('bolusValue').textContent = '0.0';
     document.getElementById('continuousValue').textContent = '0.0';
-    document.getElementById('anesthesiaStartTime').textContent = appState.patient.formattedStartTime;
+    document.getElementById('anesthesiaStartTime').textContent = formatClock(appState.patient.anesthesiaStartTime);
     updateDoseTimeNote();
     modal.classList.add('active');
 }
@@ -279,7 +279,7 @@ function updatePatientDisplay() {
     document.getElementById('patientBMI').textContent = p.bmi.toFixed(1);
     document.getElementById('patientSex').textContent = SexType.displayName(p.sex);
     document.getElementById('patientModel').textContent = ModelType.displayName(p.model);
-    document.getElementById('anesthesiaStart').textContent = p.formattedStartTime;
+    document.getElementById('anesthesiaStart').textContent = formatClock(p.anesthesiaStartTime);
     document.getElementById('patientSummaryText').textContent =
         `${p.age} y · ${p.weight.toFixed(0)} kg · ${p.height.toFixed(0)} cm · ${p.sex === SexType.MALE ? 'M' : 'F'} · ${ModelType.displayName(p.model)}`;
 }
@@ -312,7 +312,7 @@ function updateDoseTimeNote() {
     if (!inCase) { note.textContent = ''; return; }
     const { minutes, wrapped } = inCase;
     note.textContent = wrapped
-        ? `Before the anesthesia start (${appState.patient.formattedStartTime}), so this is counted as the next day: minute ${minutes}. Change the start time in the patient settings if the case has already begun.`
+        ? `Before the anesthesia start (${formatClock(appState.patient.anesthesiaStartTime)}), so this is counted as the next day: minute ${minutes}. Change the start time in the patient settings if the case has already begun.`
         : `Minute ${minutes} of the case.`;
 }
 
@@ -367,7 +367,7 @@ function createDoseEventElement(event, index) {
     infoDiv.className = 'dose-info';
     
     const title = document.createElement('h4');
-    title.textContent = `${event.timeInMinutes} min (${event.formattedClockTime(appState.patient)})`;
+    title.textContent = `${event.timeInMinutes} min (${formatCaseClock(appState.patient, event.timeInMinutes)})`;
     
     const details = document.createElement('div');
     details.className = 'dose-details';
@@ -433,8 +433,8 @@ function updateResultsDisplay() {
     document.getElementById('resultsContent').classList.remove('hidden');
     
     document.getElementById('calculationMethod').textContent = result.calculationMethod;
-    document.getElementById('maxPlasma').textContent = result.maxPlasmaConcentration.toFixed(3);
-    document.getElementById('maxEffect').textContent = result.maxEffectSiteConcentration.toFixed(3);
+    document.getElementById('maxPlasma').textContent = formatConcentration(result.maxPlasmaConcentration);
+    document.getElementById('maxEffect').textContent = formatConcentration(result.maxEffectSiteConcentration);
 
     document.getElementById('staleNote').hidden = true;
     document.getElementById('readouts').classList.remove('stale');
@@ -458,10 +458,10 @@ function updateTable() {
     appState.simulationResult.timePoints.forEach(tp => {
         const row = tbody.insertRow();
         row.innerHTML = `
-            <td>${tp.formattedClockTime(appState.patient)}</td>
-            <td>${tp.plasmaConcentrationString}</td>
-            <td>${tp.effectSiteConcentrationString}</td>
-            <td>${tp.tofRatioString}</td>
+            <td>${formatCaseClock(appState.patient, tp.timeInMinutes)}</td>
+            <td>${formatConcentration(tp.plasmaConcentration)}</td>
+            <td>${formatConcentration(tp.effectSiteConcentration)}</td>
+            <td>${formatTofRatio(tp.tofRatio)}</td>
         `;
     });
 }
@@ -478,13 +478,13 @@ function drawCursorReadouts() {
     const result = appState.simulationResult;
     if (!result) return;
     const tp = result.pointAt(appState.cursorMin);
-    document.getElementById('readCp').textContent = tp.plasmaConcentrationString;
-    document.getElementById('readCe').textContent = tp.effectSiteConcentrationString;
-    document.getElementById('readTof').textContent = tp.tofRatioString;
+    document.getElementById('readCp').textContent = formatConcentration(tp.plasmaConcentration);
+    document.getElementById('readCe').textContent = formatConcentration(tp.effectSiteConcentration);
+    document.getElementById('readTof').textContent = formatTofRatio(tp.tofRatio);
     document.getElementById('cursorRange').value = String(tp.timeInMinutes);
     document.getElementById('cursorValue').textContent =
-        `${tp.formattedClockTime(appState.patient)} · ${tp.timeInMinutes} min`;
-    const values = { plasma: tp.plasmaConcentrationString, effect: tp.effectSiteConcentrationString, tof: tp.tofRatioString };
+        `${formatCaseClock(appState.patient, tp.timeInMinutes)} · ${tp.timeInMinutes} min`;
+    const values = { plasma: formatConcentration(tp.plasmaConcentration), effect: formatConcentration(tp.effectSiteConcentration), tof: formatTofRatio(tp.tofRatio) };
     document.querySelectorAll('[data-value-for]').forEach(node => {
         node.textContent = hiddenSeries.has(node.dataset.valueFor) ? '' : values[node.dataset.valueFor];
     });
@@ -579,7 +579,7 @@ function updateChart() {
     // The window is minutes into the run; ticks are written as the clock time of that minute.
     const clockAt = (minute) => {
         const tp = result.pointAt(minute);
-        return tp ? tp.formattedClockTime(appState.patient) : '';
+        return tp ? formatCaseClock(appState.patient, tp.timeInMinutes) : '';
     };
 
     appState.chart = new Chart(ctx, {
@@ -659,7 +659,7 @@ function exportToCsv() {
         return;
     }
     
-    const csvContent = appState.simulationResult.toCSV();
+    const csvContent = resultToCsv(appState.simulationResult);
     const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
     
     const patientId = appState.patient.id.replace(/[^a-zA-Z0-9]/g, '_');

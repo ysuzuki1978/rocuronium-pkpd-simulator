@@ -73,10 +73,6 @@ class Patient {
         return new Date(this.anesthesiaStartTime.getTime() + minutesFromStart * 60000);
     }
     
-    get formattedStartTime() {
-        return formatClock(this.anesthesiaStartTime);
-    }
-    
     validate() {
         const errors = [];
         
@@ -117,11 +113,6 @@ class DoseEvent {
     
     continuousRateMgMin(patient) {
         return (this.continuousMcgKgMin * patient.weight) / 1000.0;
-    }
-    
-    formattedClockTime(patient) {
-        const clockTime = patient.minutesToClockTime(this.timeInMinutes);
-        return formatClock(clockTime);
     }
     
     validate() {
@@ -168,23 +159,6 @@ class TimePoint {
         this.effectSiteConcentration = effectSiteConcentration;
         this.tofRatio = tofRatio;
     }
-    
-    get plasmaConcentrationString() {
-        return this.plasmaConcentration.toFixed(3);
-    }
-    
-    get effectSiteConcentrationString() {
-        return this.effectSiteConcentration.toFixed(3);
-    }
-
-    get tofRatioString() {
-        return this.tofRatio.toFixed(1);
-    }
-    
-    formattedClockTime(patient) {
-        const clockTime = patient.minutesToClockTime(this.timeInMinutes);
-        return formatClock(clockTime);
-    }
 }
 
 // Simulation Result Class
@@ -225,18 +199,5 @@ class SimulationResult {
         const before = points[Math.max(lo - 1, 0)];
         const after = points[lo];
         return Math.abs(minute - before.timeInMinutes) <= Math.abs(after.timeInMinutes - minute) ? before : after;
-    }
-    
-    toCSV() {
-        const header = "ClockTime,Time(min),Cp(ug/mL),Ce(ug/mL),TOF_Ratio(%)";
-        const csvLines = [header];
-        
-        for (const tp of this.timePoints) {
-            const clockTime = tp.formattedClockTime(this.patient);
-            const line = `${clockTime},${tp.timeInMinutes},${tp.plasmaConcentration.toFixed(4)},${tp.effectSiteConcentration.toFixed(4)},${tp.tofRatio.toFixed(2)}`;
-            csvLines.push(line);
-        }
-        
-        return csvLines.join("\n");
     }
 }
