@@ -190,7 +190,7 @@ function showPatientEditor() {
     document.getElementById('editHeight').value = p.height;
     document.querySelector(`input[name="sex"][value="${p.sex === SexType.MALE ? 'male' : 'female'}"]`).checked = true;
     document.getElementById('editModel').value = p.model;
-    document.getElementById('editAnesthesiaStart').value = p.anesthesiaStartTime.toTimeString().substring(0, 5);
+    document.getElementById('editAnesthesiaStart').value = formatClock(p.anesthesiaStartTime);
     
     document.getElementById('ageValue').textContent = p.age;
     document.getElementById('weightValue').textContent = p.weight.toFixed(1);
@@ -245,9 +245,8 @@ function savePatientData(e) {
     e.preventDefault();
     
     const timeValue = document.getElementById('editAnesthesiaStart').value;
-    const anesthesiaStart = new Date(appState.patient.anesthesiaStartTime);
-    const [hours, minutes] = timeValue.split(':').map(Number);
-    anesthesiaStart.setHours(hours, minutes, 0, 0);
+    const anesthesiaStart = withClock(appState.patient.anesthesiaStartTime, timeValue);
+    if (!anesthesiaStart) { alert('Enter the anesthesia start time as HH:MM.'); return; }
     
     appState.patient = new Patient(
         document.getElementById('editPatientId').value,
@@ -294,43 +293,24 @@ function markStale() {
 
 // --- Dose Events ---
 
-/**
- * How far into the case a clock time ("HH:MM") is. A time before the anaesthesia
- * start is read as the following day, which is the only reading that describes
- * a case; `wrapped` says that happened, so the form can show it.
- */
-function minutesIntoCase(timeValue) {
-    const at = new Date(appState.patient.anesthesiaStartTime);
-    const [hours, minutes] = timeValue.split(':').map(Number);
-    at.setHours(hours, minutes, 0, 0);
-    let diff = appState.patient.clockTimeToMinutes(at);
-    const wrapped = diff < 0;
-    if (wrapped) diff += 1440;
-    return { minutes: Math.max(0, Math.round(diff)), wrapped };
-}
-
-const clockNow = () => {
-    const now = new Date();
-    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-};
-
 /** Puts the current wall-clock time in the dose time field. */
 function setDoseTimeNow() {
-    document.getElementById('doseTime').value = clockNow();
+    document.getElementById('doseTime').value = formatClock(new Date());
     updateDoseTimeNote();
 }
 
 /** The anesthesia start field in the patient editor, set to the wall clock. */
 function setStartTimeNow() {
-    document.getElementById('editAnesthesiaStart').value = clockNow();
+    document.getElementById('editAnesthesiaStart').value = formatClock(new Date());
 }
 
 /** Says where the entered time falls in the case, before it is added. */
 function updateDoseTimeNote() {
     const note = document.getElementById('doseTimeNote');
     const value = document.getElementById('doseTime').value;
-    if (!value) { note.textContent = ''; return; }
-    const { minutes, wrapped } = minutesIntoCase(value);
+    const inCase = minutesIntoCase(appState.patient.anesthesiaStartTime, value);
+    if (!inCase) { note.textContent = ''; return; }
+    const { minutes, wrapped } = inCase;
     note.textContent = wrapped
         ? `Before the anesthesia start (${appState.patient.formattedStartTime}), so this is counted as the next day: minute ${minutes}. Change the start time in the patient settings if the case has already begun.`
         : `Minute ${minutes} of the case.`;
@@ -343,7 +323,9 @@ function addDoseEvent(e) {
     const bolusAmount = parseFloat(document.getElementById('bolusAmount').value);
     const continuousRate = parseFloat(document.getElementById('continuousRate').value);
     
-    const { minutes: minutesFromStart } = minutesIntoCase(timeValue);
+    const inCase = minutesIntoCase(appState.patient.anesthesiaStartTime, timeValue);
+    if (!inCase) { alert('Enter the dose time as HH:MM.'); return; }
+    const minutesFromStart = inCase.minutes;
     
     const doseEvent = new DoseEvent(minutesFromStart, bolusAmount, continuousRate);
     

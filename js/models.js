@@ -73,17 +73,8 @@ class Patient {
         return new Date(this.anesthesiaStartTime.getTime() + minutesFromStart * 60000);
     }
     
-    clockTimeToMinutes(clockTime) {
-        let minutesDiff = (clockTime.getTime() - this.anesthesiaStartTime.getTime()) / 60000;
-        return minutesDiff;
-    }
-    
     get formattedStartTime() {
-        return this.anesthesiaStartTime.toLocaleTimeString('ja-JP', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        });
+        return formatClock(this.anesthesiaStartTime);
     }
     
     validate() {
@@ -130,11 +121,7 @@ class DoseEvent {
     
     formattedClockTime(patient) {
         const clockTime = patient.minutesToClockTime(this.timeInMinutes);
-        return clockTime.toLocaleTimeString('ja-JP', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        });
+        return formatClock(clockTime);
     }
     
     validate() {
@@ -196,11 +183,7 @@ class TimePoint {
     
     formattedClockTime(patient) {
         const clockTime = patient.minutesToClockTime(this.timeInMinutes);
-        return clockTime.toLocaleTimeString('ja-JP', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        });
+        return formatClock(clockTime);
     }
 }
 
