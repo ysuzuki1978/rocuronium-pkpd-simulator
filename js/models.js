@@ -73,19 +73,6 @@ class Patient {
         return new Date(this.anesthesiaStartTime.getTime() + minutesFromStart * 60000);
     }
     
-    clockTimeToMinutes(clockTime) {
-        let minutesDiff = (clockTime.getTime() - this.anesthesiaStartTime.getTime()) / 60000;
-        return minutesDiff;
-    }
-    
-    get formattedStartTime() {
-        return this.anesthesiaStartTime.toLocaleTimeString('ja-JP', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        });
-    }
-    
     validate() {
         const errors = [];
         
@@ -128,15 +115,6 @@ class DoseEvent {
         return (this.continuousMcgKgMin * patient.weight) / 1000.0;
     }
     
-    formattedClockTime(patient) {
-        const clockTime = patient.minutesToClockTime(this.timeInMinutes);
-        return clockTime.toLocaleTimeString('ja-JP', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        });
-    }
-    
     validate() {
         const errors = [];
         
@@ -163,15 +141,6 @@ class RocuroniumPKPDParameters {
     }
 }
 
-// System State Class
-class SystemState {
-    constructor(a1 = 0.0, a2 = 0.0, a3 = 0.0) {
-        this.a1 = a1;
-        this.a2 = a2;
-        this.a3 = a3;
-    }
-}
-
 // Unified System State Class (4-dimensional: a1, a2, a3, Ce)
 class UnifiedSystemState {
     constructor(a1 = 0.0, a2 = 0.0, a3 = 0.0, ce = 0.0) {
@@ -184,40 +153,19 @@ class UnifiedSystemState {
 
 // Time Point Class
 class TimePoint {
-    constructor(timeInMinutes, doseEvent, plasmaConcentration, effectSiteConcentration, tofRatio) {
+    constructor(timeInMinutes, plasmaConcentration, effectSiteConcentration, tofRatio) {
         this.timeInMinutes = timeInMinutes;
-        this.doseEvent = doseEvent;
         this.plasmaConcentration = plasmaConcentration;
         this.effectSiteConcentration = effectSiteConcentration;
         this.tofRatio = tofRatio;
-    }
-    
-    get plasmaConcentrationString() {
-        return this.plasmaConcentration.toFixed(3);
-    }
-    
-    get effectSiteConcentrationString() {
-        return this.effectSiteConcentration.toFixed(3);
-    }
-
-    get tofRatioString() {
-        return this.tofRatio.toFixed(1);
-    }
-    
-    formattedClockTime(patient) {
-        const clockTime = patient.minutesToClockTime(this.timeInMinutes);
-        return clockTime.toLocaleTimeString('ja-JP', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        });
     }
 }
 
 // Simulation Result Class
 class SimulationResult {
-    constructor(timePoints, patient, doseEvents, calculationMethod, calculatedAt) {
+    constructor(timePoints, patient, doseEvents, calculationMethod, calculatedAt, sampleIntervalMin = 1) {
         this.timePoints = timePoints;
+        this.sampleIntervalMin = sampleIntervalMin; // spacing of timePoints, minutes
         this.patient = patient;
         this.doseEvents = doseEvents;
         this.calculationMethod = calculationMethod;
@@ -237,17 +185,19 @@ class SimulationResult {
     get simulationDurationMinutes() {
         return this.timePoints.length > 0 ? this.timePoints[this.timePoints.length - 1].timeInMinutes : 0;
     }
-    
-    toCSV() {
-        const header = "ClockTime,Time(min),Cp(ug/mL),Ce(ug/mL),TOF_Ratio(%)";
-        const csvLines = [header];
-        
-        for (const tp of this.timePoints) {
-            const clockTime = tp.formattedClockTime(this.patient);
-            const line = `${clockTime},${tp.timeInMinutes},${tp.plasmaConcentration.toFixed(4)},${tp.effectSiteConcentration.toFixed(4)},${tp.tofRatio.toFixed(2)}`;
-            csvLines.push(line);
+
+    /** The sample nearest to `minute` (clamped to the run), found by time, not by array position. */
+    pointAt(minute) {
+        const points = this.timePoints;
+        if (points.length === 0) return undefined;
+        let lo = 0;
+        let hi = points.length - 1;
+        while (lo < hi) {
+            const mid = (lo + hi) >> 1;
+            if (points[mid].timeInMinutes < minute) lo = mid + 1; else hi = mid;
         }
-        
-        return csvLines.join("\n");
+        const before = points[Math.max(lo - 1, 0)];
+        const after = points[lo];
+        return Math.abs(minute - before.timeInMinutes) <= Math.abs(after.timeInMinutes - minute) ? before : after;
     }
 }

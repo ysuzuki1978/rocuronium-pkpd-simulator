@@ -1,0 +1,10 @@
+{
+  "name": "rocuronium-pkpd-simulator",
+  "version": "1.2.1",
+  "private": true,
+  "description": "Rocuronium PK/PD simulator (browser app, no build step); package.json only runs the Node tests",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  }
+}
